@@ -1,24 +1,29 @@
 const express = require("express");
+const connectDB = require("./db");
+const TouristSpot = require("./models/TouristSpot");
+
 const app = express();
 const PORT = 5000;
 
-// Middleware to parse JSON
+// Connect MongoDB
+connectDB();
+
+// Middleware
 app.use(express.json());
 
-// Test route
+// Routes
 app.get("/", (req, res) => {
   res.send("Tourism Web App Backend is running 🚀");
 });
 
-// Example API route
-app.get("/api/places", (req, res) => {
-  res.json([
-    { id: 1, name: "Taj Mahal", location: "Agra" },
-    { id: 2, name: "Gateway of India", location: "Mumbai" },
-  ]);
+// Get all tourist spots from DB
+app.get("/api/places", async (req, res) => {
+  try {
+    const spots = await TouristSpot.find();
+    res.json(spots);
+  } catch (err) {
+    res.status(500).send("Server Error");
+  }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
