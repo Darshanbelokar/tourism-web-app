@@ -97,7 +97,7 @@ const FeaturedDestinations = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {destinations.map((destination) => (
-            <Card key={destination.id} className="group overflow-hidden shadow-elegant hover:shadow-glow transition-all duration-300 hover:-translate-y-2">
+            <Card key={destination.id} className="group overflow-hidden shadow-elegant hover:shadow-glow transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
               <div className="relative">
                 <img
                   src={destination.image}

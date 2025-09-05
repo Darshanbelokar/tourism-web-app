@@ -66,7 +66,7 @@ const CulturalExperiences = () => {
           {experiences.map((experience) => {
             const IconComponent = experience.icon;
             return (
-              <Card key={experience.id} className="p-6 shadow-cultural hover:shadow-glow transition-all duration-300 hover:-translate-y-1 bg-gradient-cultural text-secondary-foreground">
+            <Card key={experience.id} className="p-6 shadow-cultural hover:shadow-glow transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] bg-gradient-cultural text-secondary-foreground">
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary-foreground/20 rounded-full mb-4">
                     <IconComponent className="h-8 w-8" />

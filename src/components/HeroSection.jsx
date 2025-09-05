@@ -13,11 +13,12 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroImage})` }}
       >
-        <div className="absolute inset-0 bg-gradient-hero"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
       </div>
 
       {/* Content */}
@@ -39,12 +40,12 @@ const HeroSection = () => {
           </p>
 
           <div className={`flex flex-col sm:flex-row gap-4 justify-center mb-12 transition-opacity duration-1500 delay-700 ${animate ? 'opacity-100' : 'opacity-0'}`}>
-            <Button variant="hero" size="lg" className="shadow-glow">
-              <Camera className="h-5 w-5 mr-2" />
+            <Button variant="hero" size="lg" className="shadow-glow hover:shadow-xl hover:scale-105 transition-all duration-300 group">
+              <Camera className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform duration-300" />
               Start Your Journey
             </Button>
-            <Button variant="cultural" size="lg">
-              <Users className="h-5 w-5 mr-2" />
+            <Button variant="cultural" size="lg" className="hover:scale-105 transition-all duration-300 group">
+              <Users className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
               Explore Culture
             </Button>
           </div>
