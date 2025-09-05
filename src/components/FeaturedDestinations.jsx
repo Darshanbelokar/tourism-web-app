@@ -1,12 +1,11 @@
-// ...existing code...
+import { useState, useEffect } from "react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { MapPin, Star, Clock, Camera } from "lucide-react";
 import BetlaNationalPark from "@/assets/BetlaNationalPark.jpg";
-import  Netarhat from "@/assets/Netarhat.jpg";
+import Netarhat from "@/assets/Netarhat.jpg";
 import HundruFalls from "@/assets/Hundru.jpeg";
-import DeogharTemple from "@/assets/Deoghartemple.jpg";
-
+import DeogharTemple from "@/assets/DeogharTemple.jpg";
 
 const destinations = [
   {
@@ -24,7 +23,7 @@ const destinations = [
     name: "Netarhat Hill Station",
     image: Netarhat,
     rating: 4.7,
-    duration: "1-2 days", 
+    duration: "1-2 days",
     description: "The 'Queen of Chotanagpur' with breathtaking sunrise and sunset views.",
     highlights: ["Sunrise Point", "Magnolia Point", "Cool Climate"],
     location: "Latehar District"
@@ -52,6 +51,37 @@ const destinations = [
 ];
 
 const FeaturedDestinations = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading delay
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <section id="destinations" className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 animate-pulse">
+              Featured Destinations
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-pulse">
+              Discover Jharkhand's most breathtaking locations, from wild national parks
+              to serene hill stations and sacred temples.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-72 bg-muted rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="destinations" className="py-20 bg-background">
       <div className="container mx-auto px-4">
@@ -60,7 +90,7 @@ const FeaturedDestinations = () => {
             Featured Destinations
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover Jharkhand's most breathtaking locations, from wild national parks 
+            Discover Jharkhand's most breathtaking locations, from wild national parks
             to serene hill stations and sacred temples.
           </p>
         </div>
@@ -69,8 +99,8 @@ const FeaturedDestinations = () => {
           {destinations.map((destination) => (
             <Card key={destination.id} className="group overflow-hidden shadow-elegant hover:shadow-glow transition-all duration-300 hover:-translate-y-2">
               <div className="relative">
-                <img 
-                  src={destination.image} 
+                <img
+                  src={destination.image}
                   alt={destination.name}
                   className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -83,19 +113,19 @@ const FeaturedDestinations = () => {
                   {destination.duration}
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <div className="flex items-center space-x-2 text-muted-foreground text-sm mb-2">
                   <MapPin className="h-4 w-4" />
                   <span>{destination.location}</span>
                 </div>
-                
+
                 <h3 className="text-xl font-bold text-foreground mb-3">{destination.name}</h3>
                 <p className="text-muted-foreground mb-4 line-clamp-2">{destination.description}</p>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   {destination.highlights.map((highlight, index) => (
-                    <span 
+                    <span
                       key={index}
                       className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs"
                     >
@@ -103,7 +133,7 @@ const FeaturedDestinations = () => {
                     </span>
                   ))}
                 </div>
-                
+
                 <Button className="w-full" variant="outline">
                   <Camera className="h-4 w-4 mr-2" />
                   Explore More

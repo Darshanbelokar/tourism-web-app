@@ -1,4 +1,4 @@
-// ...existing code...
+import { useState, useEffect } from "react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Users, Music, Palette, Home, Calendar } from "lucide-react";
@@ -43,20 +43,26 @@ const experiences = [
 ];
 
 const CulturalExperiences = () => {
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    setAnimate(true);
+  }, []);
+
   return (
     <section id="culture" className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div className={`text-center mb-16 transition-opacity duration-1000 ${animate ? 'opacity-100' : 'opacity-0'}`}>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Authentic Cultural Experiences
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Immerse yourself in the rich tribal heritage of Jharkhand through unique, 
+            Immerse yourself in the rich tribal heritage of Jharkhand through unique,
             community-based experiences that benefit local communities.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 transition-opacity duration-1500 delay-300 ${animate ? 'opacity-100' : 'opacity-0'}`}>
           {experiences.map((experience) => {
             const IconComponent = experience.icon;
             return (

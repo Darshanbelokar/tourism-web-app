@@ -17,6 +17,8 @@ const ItineraryPlanner = () => {
     travelStyle: ""
   });
 
+  const [generatedItinerary, setGeneratedItinerary] = useState(null);
+
   const sampleItinerary = {
     title: "3-Day Eco-Cultural Adventure",
     duration: "3 Days, 2 Nights",
@@ -187,69 +189,148 @@ const ItineraryPlanner = () => {
                 />
               </div>
 
-              <Button className="w-full" variant="hero" size="lg">
+              <Button
+                className="w-full"
+                variant="hero"
+                size="lg"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/generate-itinerary', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(formData),
+                    });
+                    if (!response.ok) {
+                      throw new Error('Failed to generate itinerary');
+                    }
+                    const data = await response.json();
+                    setGeneratedItinerary(data);
+                  } catch (error) {
+                    console.error('Error generating itinerary:', error);
+                  }
+                }}
+              >
                 <Sparkles className="h-5 w-5 mr-2" />
                 Generate AI Itinerary
               </Button>
             </div>
           </Card>
 
-          {/* Sample Itinerary */}
-          <Card className="p-6 shadow-elegant">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-foreground">{sampleItinerary.title}</h3>
-              <div className="flex items-center space-x-1">
-                <Star className="h-4 w-4 text-accent fill-current" />
-                <span className="text-sm font-medium">{sampleItinerary.rating}</span>
-              </div>
-            </div>
+          {/* Sample Itinerary or Generated Itinerary */}
+          <Card className="p-6 shadow-elegant max-h-[600px] overflow-y-auto">
+            {generatedItinerary ? (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-foreground">{generatedItinerary.title}</h3>
+                  <div className="flex items-center space-x-1">
+                    <Star className="h-4 w-4 text-accent fill-current" />
+                    <span className="text-sm font-medium">{generatedItinerary.rating}</span>
+                  </div>
+                </div>
 
-            <div className="flex flex-wrap gap-2 mb-6">
-              <Badge variant="outline" className="flex items-center space-x-1">
-                <Calendar className="h-3 w-3" />
-                <span>{sampleItinerary.duration}</span>
-              </Badge>
-              <Badge variant="outline" className="flex items-center space-x-1">
-                <span>💰</span>
-                <span>{sampleItinerary.budget}</span>
-              </Badge>
-            </div>
-
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-foreground mb-2">Highlights:</h4>
-              <div className="flex flex-wrap gap-2">
-                {sampleItinerary.highlights.map((highlight, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
-                    {highlight}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Badge variant="outline" className="flex items-center space-x-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{generatedItinerary.duration}</span>
                   </Badge>
-                ))}
-              </div>
-            </div>
+                  <Badge variant="outline" className="flex items-center space-x-1">
+                    <span>💰</span>
+                    <span>{generatedItinerary.budget}</span>
+                  </Badge>
+                </div>
 
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {sampleItinerary.days.map((day, dayIndex) => (
-                <div key={dayIndex} className="border-l-2 border-primary/30 pl-4">
-                  <h4 className="font-bold text-foreground mb-2 flex items-center space-x-2">
-                    <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                      {day.day}
-                    </span>
-                    <span>{day.title}</span>
-                  </h4>
-                  <div className="space-y-2 ml-8">
-                    {day.activities.map((activity, actIndex) => (
-                      <div key={actIndex} className="flex items-center space-x-3 text-sm">
-                        <span className="text-muted-foreground font-mono text-xs min-w-[50px]">
-                          {activity.time}
-                        </span>
-                        <span className="text-lg">{getActivityIcon(activity.type)}</span>
-                        <span className="text-foreground">{activity.activity}</span>
-                      </div>
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-foreground mb-2">Highlights:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {generatedItinerary.highlights.map((highlight, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {highlight}
+                      </Badge>
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
 
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {generatedItinerary.days.map((day, dayIndex) => (
+                    <div key={dayIndex} className="border-l-2 border-primary/30 pl-4">
+                      <h4 className="font-bold text-foreground mb-2 flex items-center space-x-2">
+                        <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                          {day.day}
+                        </span>
+                        <span>{day.title}</span>
+                      </h4>
+                      <div className="space-y-2 ml-8">
+                        {day.activities.map((activity, actIndex) => (
+                          <div key={actIndex} className="flex items-center space-x-3 text-sm">
+                            <span className="text-muted-foreground font-mono text-xs min-w-[50px]">
+                              {activity.time}
+                            </span>
+                            <span className="text-lg">{getActivityIcon(activity.type)}</span>
+                            <span className="text-foreground">{activity.activity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-foreground">{sampleItinerary.title}</h3>
+                  <div className="flex items-center space-x-1">
+                    <Star className="h-4 w-4 text-accent fill-current" />
+                    <span className="text-sm font-medium">{sampleItinerary.rating}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Badge variant="outline" className="flex items-center space-x-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{sampleItinerary.duration}</span>
+                  </Badge>
+                  <Badge variant="outline" className="flex items-center space-x-1">
+                    <span>💰</span>
+                    <span>{sampleItinerary.budget}</span>
+                  </Badge>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-foreground mb-2">Highlights:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {sampleItinerary.highlights.map((highlight, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {highlight}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {sampleItinerary.days.map((day, dayIndex) => (
+                    <div key={dayIndex} className="border-l-2 border-primary/30 pl-4">
+                      <h4 className="font-bold text-foreground mb-2 flex items-center space-x-2">
+                        <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                          {day.day}
+                        </span>
+                        <span>{day.title}</span>
+                      </h4>
+                      <div className="space-y-2 ml-8">
+                        {day.activities.map((activity, actIndex) => (
+                          <div key={actIndex} className="flex items-center space-x-3 text-sm">
+                            <span className="text-muted-foreground font-mono text-xs min-w-[50px]">
+                              {activity.time}
+                            </span>
+                            <span className="text-lg">{getActivityIcon(activity.type)}</span>
+                            <span className="text-foreground">{activity.activity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
             <div className="mt-6 pt-4 border-t border-border">
               <Button className="w-full" variant="outline">
                 <MapPin className="h-4 w-4 mr-2" />
