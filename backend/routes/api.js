@@ -10,6 +10,7 @@ import User from "../models/User.js";
 
 router.get('/spots', async (req, res) => {
   try {
+
     const spots = await TouristSpot.find();
     res.json(spots);
   } catch (err) {
@@ -50,16 +51,14 @@ router.get('/bookings', async (req, res) => {
   }
 });
 
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Initialize Google Generative AI client
+const genAI = process.env.GOOGLE_API_KEY ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY) : null;
 
 router.post('/ai-chat', async (req, res) => {
   try {
     const { message, language, conversationHistory } = req.body;
-
-    // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
 
     // Prepare context for AI
     const systemPrompt = `You are a multilingual AI travel assistant specializing in Jharkhand tourism. You speak English, Hindi, Santali, Ho, and Kharia languages.
@@ -76,22 +75,28 @@ Always respond in the user's preferred language. Be helpful, informative, and pr
 
 Current user language: ${language}`;
 
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-5), // Keep last 5 messages for context
-      { role: 'user', content: message }
-    ];
+    // Build conversation history (text fallback for Google)
+    const historySlice = Array.isArray(conversationHistory) ? conversationHistory.slice(-6) : [];
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: messages,
-      max_tokens: 300,
-      temperature: 0.7,
+    let conversationText = systemPrompt + "\n\n";
+    historySlice.forEach(msg => {
+      conversationText += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content || msg.text || ''}\n`;
     });
+    conversationText += `User: ${message}`;
 
-    const aiResponse = completion.choices[0].message.content;
-
-    res.json({ response: aiResponse });
+    if (process.env.GOOGLE_API_KEY && genAI) {
+      try {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(conversationText);
+        const aiResponse = result?.response?.text() || '';
+        return res.json({ response: aiResponse });
+      } catch (apiError) {
+        console.error('Google Generative API call error:', apiError);
+        return res.status(502).json({ error: 'Google Generative API error', details: apiError.message });
+      }
+    } else {
+      return res.status(503).json({ error: 'AI service not configured on server (set GOOGLE_API_KEY).' });
+    }
   } catch (error) {
     console.error('AI Chat error:', error);
     res.status(500).json({
@@ -111,13 +116,8 @@ router.post('/generate-itinerary', async (req, res) => {
       travelStyle
     } = req.body;
 
-    // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
-    // Prepare AI prompt for itinerary generation
-    const systemPrompt = `You are an expert AI travel planner specializing in Jharkhand tourism. Create detailed, personalized itineraries that promote sustainable tourism and support local communities.
+  // Prepare AI prompt for itinerary generation
+  const systemPrompt = `You are an expert AI travel planner specializing in Jharkhand tourism. Create detailed, personalized itineraries that promote sustainable tourism and support local communities.
 
 Key information about Jharkhand:
 - Famous destinations: Betla National Park, Netarhat Hill Station, Hundru Falls, Deoghar Temple, Parasnath Hill, Ranchi, Jamshedpur
@@ -168,17 +168,49 @@ Respond ONLY with valid JSON, no additional text.`;
 - Group Size: ${groupSize || '2-4 people'}
 - Travel Style: ${travelStyle || 'mixed adventure and culture'}`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      max_tokens: 2000,
-      temperature: 0.7,
-    });
+    const fullPrompt = systemPrompt + "\n\n" + userPrompt;
 
-    const aiResponse = completion.choices[0].message.content;
+    // Prefer Google Gemini if configured
+    let aiResponse = '';
+    if (process.env.GOOGLE_API_KEY) {
+      try {
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+        // use text-bison for longer textual output / structured content
+        const model = genAI.getGenerativeModel({ model: 'models/text-bison-001' });
+        const result = await model.generateContent(fullPrompt);
+        aiResponse = result?.response?.text() || '';
+      } catch (gErr) {
+        console.error('Google Generative itinerary error:', gErr);
+        // fall back to OpenAI if available
+        if (openai) {
+          console.warn('Falling back to OpenAI itinerary generation due to Google API error');
+        } else {
+          return res.status(502).json({ error: 'Google Generative API error', details: gErr.message });
+        }
+      }
+    }
+
+    if (!aiResponse) {
+      if (openai) {
+        try {
+          const completion = await openai.chat.completions.create({
+            model: DEFAULT_ITINERARY_MODEL,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+          });
+          aiResponse = completion?.choices?.[0]?.message?.content || '';
+        } catch (oErr) {
+          console.error('OpenAI itinerary error:', oErr);
+          return res.status(502).json({ error: 'OpenAI API error' });
+        }
+      } else {
+        return res.status(503).json({ error: 'AI service not configured (set GOOGLE_API_KEY or OPENAI_API_KEY).' });
+      }
+    }
 
     // Parse the JSON response
     let itinerary;
@@ -214,6 +246,41 @@ Respond ONLY with valid JSON, no additional text.`;
       error: 'Failed to generate itinerary. Please try again.',
       details: error.message
     });
+  }
+});
+
+// List available AI models (Google Generative API if configured, otherwise OpenAI)
+router.get('/ai/models', async (req, res) => {
+  try {
+    // Prefer Google Generative AI
+    if (process.env.GOOGLE_API_KEY) {
+      try {
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+        // listModels is what the earlier error suggested; adapt if the client exposes a different API
+        const models = await genAI.listModels();
+        return res.json({ provider: 'google', models });
+      } catch (gErr) {
+        console.error('Google listModels error:', gErr);
+        // fall through to OpenAI if available
+      }
+    }
+
+    // Fallback to OpenAI models list if OpenAI key is configured
+    if (openai) {
+      try {
+        // openai.models.list() returns available models in recent SDKs
+        const resp = await openai.models.list();
+        return res.json({ provider: 'openai', models: resp.data || resp });
+      } catch (oErr) {
+        console.error('OpenAI list models error:', oErr);
+        return res.status(502).json({ error: 'OpenAI models listing error', details: oErr.message });
+      }
+    }
+
+    return res.status(503).json({ error: 'AI service not configured (set GOOGLE_API_KEY or OPENAI_API_KEY).' });
+  } catch (err) {
+    console.error('AI models endpoint error:', err);
+    return res.status(500).json({ error: 'Failed to list AI models', details: err.message });
   }
 });
 
