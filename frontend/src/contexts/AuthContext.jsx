@@ -1,6 +1,8 @@
 // src/contexts/AuthContext.js
 import { createContext, useContext, useState } from "react";
 
+const getApiBase = () => import.meta.env.VITE_BACKEND_URL || '';
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -10,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   // 🔹 Login
   const signIn = async (email, password) => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+  const res = await fetch(`${getApiBase()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -35,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   // 🔹 Signup
   const signUp = async (fullName, email, password) => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/signup", {
+  const res = await fetch(`${getApiBase()}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email, password }),

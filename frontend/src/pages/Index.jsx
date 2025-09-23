@@ -5,6 +5,10 @@ import CulturalExperiences from "@/components/CulturalExperiences";
 import LocalMarketplace from "@/components/LocalMarketPlace";
 import ItineraryPlanner from "@/components/ItineraryPlanner";
 import ChatbotInterface from "@/components/ChatbotInterfaceEnhanced";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import FeedbackSystem from "@/components/FeedbackSystem";
+import Marketplace from "@/components/Marketplace";
+import TransportTracker from "@/components/TransportTracker";
 
 const Index = () => {
   return (
@@ -16,6 +20,52 @@ const Index = () => {
         <CulturalExperiences />
         <LocalMarketplace />
         <ItineraryPlanner />
+
+        {/* New Advanced Features */}
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12">Advanced Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+              {/* Analytics Dashboard */}
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4">Analytics Dashboard</h3>
+                <p className="text-gray-600 mb-4">
+                  Real-time insights into user behavior, booking trends, and platform performance.
+                </p>
+                <AnalyticsDashboard />
+              </div>
+
+              {/* AI Feedback System */}
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4">AI-Powered Feedback</h3>
+                <p className="text-gray-600 mb-4">
+                  Smart feedback analysis with sentiment detection and automated categorization.
+                </p>
+                <FeedbackSystem targetType="spot" targetId={null} />
+              </div>
+
+              {/* Enhanced Marketplace */}
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4">Local Marketplace</h3>
+                <p className="text-gray-600 mb-4">
+                  Discover authentic local products and connect with verified vendors.
+                </p>
+                <Marketplace />
+              </div>
+
+              {/* Transport Tracker */}
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4">Transport Tracker</h3>
+                <p className="text-gray-600 mb-4">
+                  Real-time transport tracking with live location updates and schedules.
+                </p>
+                <TransportTracker />
+              </div>
+
+            </div>
+          </div>
+        </section>
       </main>
       <ChatbotInterface />
 

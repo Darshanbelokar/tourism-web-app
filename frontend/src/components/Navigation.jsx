@@ -1,15 +1,20 @@
 import { useState } from "react";
 import { Button } from "./UI/button";
-import { Menu, X, MapPin, Calendar, User, LogOut } from "lucide-react";
+import { Menu, X, MapPin, Calendar, User, LogOut, ShoppingCart } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import CartDrawer from "./CartDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginDialog from "@/components/auths/LoginDialog.jsx";
 import SignupDialog from "./auths/SignupDialog";
+
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { cart } = useCart();
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,6 +48,23 @@ const Navigation = () => {
             <a href="#planner" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
               Plan Trip
             </a>
+            <a href="/analytics" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+              Analytics
+            </a>
+            <a href="/feedback" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+              Feedback
+            </a>
+            <a href="/transport" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+              Transport
+            </a>
+
+            {/* Cart Icon */}
+            <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
+              <ShoppingCart className="h-6 w-6" />
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">{cart.length}</span>
+              )}
+            </Button>
 
             {user ? (
               <div className="flex items-center space-x-4">
@@ -94,7 +116,9 @@ const Navigation = () => {
               <X className={`absolute inset-0 h-5 w-5 transition-all duration-300 ${isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-75'}`} />
             </div>
           </Button>
-        </div>
+  </div>
+  {/* Cart Drawer */}
+  <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
         {/* Mobile Navigation */}
         <div className={`md:hidden overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-96 opacity-100 pb-4' : 'max-h-0 opacity-0'}`}>

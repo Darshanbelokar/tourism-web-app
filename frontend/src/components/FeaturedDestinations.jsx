@@ -1,13 +1,29 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
-import { MapPin, Star, Clock, Camera } from "lucide-react";
-import BetlaNationalPark from "@/assets/BetlaNationalPark.jpg";
-import Netarhat from "@/assets/Netarhat.jpg";
-import HundruFalls from "@/assets/Hundru.jpeg";
-import DeogharTemple from "@/assets/DeogharTemple.jpg";
+import { MapPin, Star, Clock, Camera, AlertCircle, ArrowRight } from "lucide-react";
+import BetlaNationalPark from "@/assets/betlaNationalPark/BetlaNationalPark.jpg";
+import { Tiger, Image2, Image3, Image4 } from "@/assets/betlaNationalPark/betlaWildlife";
+import Netarhat from "@/assets/netarhatHillStation/Netarhat.jpg";
+import { Netarhat1, Netarhat2, Netarhat3, Netarhat4 } from "@/assets/netarhatHillStation/netarhatImages";
+import HundruFalls from "@/assets/hundruFalls/Hundru.jpeg";
+import Hundru1 from "@/assets/hundruFalls/Hundru1.jpg";
+import Hundru2 from "@/assets/hundruFalls/Hundru2.jpeg";
+import Hundru3 from "@/assets/hundruFalls/Hundru3.jpg";
 
-const destinations = [
+import DeogharTemple from "@/assets/deogharTempleComplex/DeogharTemple.jpg";
+import Deoghar1 from "@/assets/deogharTempleComplex/Deoghar1.jpg";
+import Deoghar2 from "@/assets/deogharTempleComplex/Deoghar2.jpeg";
+import Deoghar3 from "@/assets/deogharTempleComplex/Deoghar3.jpg";
+import Deoghar4 from "@/assets/deogharTempleComplex/Deoghar4.webp";
+import Handicrafts from "@/assets/betlaNationalPark/handicrafts.jpeg";
+import HandMadePottery from "@/assets/betlaNationalPark/HandMadePottery.jpeg";
+import SantalBambooBasket from "@/assets/SantalBambooBasket.jpeg";
+import TribalJwellerySett from "@/assets/TribalJwellerySett.jpeg";
+
+// Fallback static data in case API fails
+const fallbackDestinations = [
   {
     id: 1,
     name: "Betla National Park",
@@ -16,7 +32,8 @@ const destinations = [
     duration: "2-3 days",
     description: "Home to majestic elephants and diverse wildlife in pristine sal forests.",
     highlights: ["Wildlife Safari", "Elephant Spotting", "Nature Trails"],
-    location: "Palamau District"
+    location: "Palamau District",
+  images: [Tiger, Image2, Image3, Image4]
   },
   {
     id: 2,
@@ -26,7 +43,8 @@ const destinations = [
     duration: "1-2 days",
     description: "The 'Queen of Chotanagpur' with breathtaking sunrise and sunset views.",
     highlights: ["Sunrise Point", "Magnolia Point", "Cool Climate"],
-    location: "Latehar District"
+    location: "Latehar District",
+  images: [Netarhat1, Netarhat2, Netarhat3, Netarhat4]
   },
   {
     id: 3,
@@ -36,7 +54,8 @@ const destinations = [
     duration: "1 day",
     description: "Spectacular 98-meter waterfall perfect for nature photography.",
     highlights: ["Waterfall Trek", "Photography", "Natural Pool"],
-    location: "Ranchi"
+    location: "Ranchi",
+  images: [HundruFalls, Hundru1, Hundru2, Hundru3]
   },
   {
     id: 4,
@@ -46,18 +65,87 @@ const destinations = [
     duration: "1-2 days",
     description: "Sacred Jyotirlinga temple and spiritual center of Jharkhand.",
     highlights: ["Baidyanath Temple", "Spiritual Experience", "Cultural Heritage"],
-    location: "Deoghar"
+    location: "Deoghar",
+  images: [Deoghar1, Deoghar2, Deoghar3, Deoghar4]
   }
 ];
 
 const FeaturedDestinations = () => {
+  const navigate = useNavigate();
+  const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [modalImage, setModalImage] = useState(null);
 
+  // Helper to compute API base (supports VITE_BACKEND_URL or same-origin relative paths)
+  const getApiBase = () => {
+    // In production we use relative paths. During dev, a VITE_BACKEND_URL can be provided
+    return import.meta.env.VITE_BACKEND_URL || '';
+  };
+
+  // Fetch data from backend API with polling every 30 seconds
   useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    let isMounted = true;
+
+    const fetchDestinations = async () => {
+      try {
+  const response = await fetch(`${getApiBase()}/api/spots`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Map API data to include image imports for known spots
+        const mappedData = data.map((spot) => {
+          let image, images;
+          switch (spot.name) {
+            case "Betla National Park":
+              image = BetlaNationalPark;
+              images = [Tiger, Image2, Image3, Image4];
+              break;
+            case "Netarhat Hill Station":
+              image = Netarhat;
+              images = [Netarhat1, Netarhat2, Netarhat3, Netarhat4];
+              break;
+            case "Hundru Falls":
+              image = HundruFalls;
+              break;
+            case "Deoghar Temple Complex":
+              image = DeogharTemple;
+              break;
+            default:
+              image = null;
+          }
+          return { ...spot, image, images: images || spot.images || [image] };
+        });
+
+        if (isMounted) {
+          setDestinations(mappedData.length > 0 ? mappedData : fallbackDestinations);
+          setLoading(false);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+          setDestinations(fallbackDestinations);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDestinations();
+    const intervalId = setInterval(fetchDestinations, 30000); // 30 seconds polling
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, []);
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
 
   if (loading) {
     return (
@@ -83,8 +171,15 @@ const FeaturedDestinations = () => {
   }
 
   return (
-    <section id="destinations" className="py-20 bg-background">
-      <div className="container mx-auto px-4">
+    <>
+      {modalImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70" onClick={() => setModalImage(null)}>
+          <img src={modalImage} alt="Enlarged" className="max-w-3xl max-h-[80vh] rounded shadow-lg border-4 border-white" onClick={e => e.stopPropagation()} />
+          <button className="absolute top-6 right-8 text-white text-3xl font-bold" onClick={() => setModalImage(null)}>&times;</button>
+        </div>
+      )}
+      <section id="destinations" className="py-20 bg-background">
+        <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Featured Destinations
@@ -93,17 +188,29 @@ const FeaturedDestinations = () => {
             Discover Jharkhand's most breathtaking locations, from wild national parks
             to serene hill stations and sacred temples.
           </p>
+          {error && (
+            <div className="text-red-600 flex items-center justify-center space-x-2 mb-4">
+              <AlertCircle className="w-5 h-5" />
+              <span>Error loading destinations: {error}</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {destinations.map((destination) => (
-            <Card key={destination.id} className="group overflow-hidden shadow-elegant hover:shadow-glow transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+            <Card key={destination._id || destination.id} className="group overflow-hidden shadow-elegant hover:shadow-glow transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
               <div className="relative">
-                <img
-                  src={destination.image}
-                  alt={destination.name}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                {destination.image ? (
+                  <img
+                    src={destination.image}
+                    alt={destination.name}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-muted flex items-center justify-center text-muted-foreground">
+                    No Image
+                  </div>
+                )}
                 <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
                   <Star className="h-4 w-4 text-accent fill-current" />
                   <span className="text-sm font-medium">{destination.rating}</span>
@@ -124,7 +231,7 @@ const FeaturedDestinations = () => {
                 <p className="text-muted-foreground mb-4 line-clamp-2">{destination.description}</p>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {destination.highlights.map((highlight, index) => (
+                  {destination.highlights && destination.highlights.map((highlight, index) => (
                     <span
                       key={index}
                       className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs"
@@ -134,10 +241,37 @@ const FeaturedDestinations = () => {
                   ))}
                 </div>
 
-                <Button className="w-full" variant="outline">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Explore More
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    variant="outline"
+                    onClick={() => toggleExpand(destination._id || destination.id)}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    {expandedId === (destination._id || destination.id) ? "Show Less" : "Explore More"}
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => navigate(`/destinations/${destination._id || destination.id}`)}
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                </div>
+
+                {expandedId === (destination._id || destination.id) && (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {(destination.images && destination.images.length > 0 ? destination.images : [destination.image]).map((imgSrc, idx) => (
+                      <img
+                        key={idx}
+                        src={imgSrc}
+                        alt={`${destination.name} photo ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => setModalImage(imgSrc)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -150,7 +284,8 @@ const FeaturedDestinations = () => {
         </div>
       </div>
     </section>
+  </>
   );
-};
+}
 
 export default FeaturedDestinations;

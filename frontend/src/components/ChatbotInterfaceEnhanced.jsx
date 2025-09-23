@@ -4,6 +4,8 @@ import { Button } from "./UI/button";
 import { Input } from "./UI/input";
 import { MessageCircle, Send, Bot, User, Globe, Mic, X, Loader2 } from "lucide-react";
 
+const getApiBase = () => 'http://localhost:3000';
+
 const ChatbotInterface = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -17,6 +19,44 @@ const ChatbotInterface = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState("");
+
+  // Voice assistant logic
+  let recognition;
+  if (typeof window !== "undefined" && 'webkitSpeechRecognition' in window) {
+    recognition = new window.webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = selectedLanguage === 'हिंदी' ? 'hi-IN' : 'en-US';
+  }
+
+  const handleMicClick = () => {
+    if (!recognition) {
+      setSpeechError("Speech recognition not supported in this browser.");
+      return;
+    }
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+      return;
+    }
+    setSpeechError("");
+    setIsListening(true);
+    recognition.start();
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputMessage(transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = (event) => {
+      setSpeechError(event.error || "Speech recognition error");
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+  };
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -45,43 +85,48 @@ const ChatbotInterface = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = inputMessage;
     setInputMessage("");
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/ai-chat', {
+      console.log('Sending message to API:', currentMessage);
+      const apiBase = getApiBase();
+      console.log('API base URL:', apiBase);
+      
+      const response = await fetch(`${apiBase}/api/ai-chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+        headers: { 
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: userMessage.text,
-          language: selectedLanguage,
-          conversationHistory: messages.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text
-          }))
+        body: JSON.stringify({ 
+          message: currentMessage,
+          language: selectedLanguage 
         })
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('AI service error');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-
+      console.log('Response data:', data);
+      
       const botMessage = {
-        id: messages.length + 2,
-        text: data.response,
+        id: userMessage.id + 1,
+        text: data.response || data.message || "Sorry, I couldn't generate a response.",
         sender: 'bot',
         timestamp: new Date()
       };
-
+      
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
+      console.error('Chatbot API error:', error);
       const errorMessage = {
         id: messages.length + 2,
-        text: "Sorry, I'm having trouble connecting right now. Please try again later.",
+        text: "Sorry, I'm having trouble connecting to the AI service right now. Please try again later.",
         sender: 'bot',
         timestamp: new Date()
       };
@@ -206,10 +251,10 @@ const ChatbotInterface = () => {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               className="flex-1"
-              disabled={loading}
+              disabled={loading || isListening}
             />
-            <Button size="sm" variant="ghost" disabled={loading}>
-              <Mic className="h-4 w-4" />
+            <Button size="sm" variant="ghost" onClick={handleMicClick} disabled={loading || isListening} aria-label="Start voice input">
+              <Mic className={`h-4 w-4 ${isListening ? 'animate-pulse text-green-500' : ''}`} />
             </Button>
             <Button size="sm" onClick={handleSendMessage} disabled={!inputMessage.trim() || loading}>
               <Send className="h-4 w-4" />
@@ -219,6 +264,9 @@ const ChatbotInterface = () => {
             <Globe className="h-3 w-3 mr-1" />
             AI-powered • Supports 5+ languages
           </p>
+          {speechError && (
+            <p className="text-xs text-red-500 mt-1">{speechError}</p>
+          )}
         </div>
       </Card>
     </div>

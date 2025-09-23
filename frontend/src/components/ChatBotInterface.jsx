@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Input } from "./UI/input";
@@ -6,14 +6,22 @@ import { MessageCircle, Send, Bot, User, Globe, Mic, X } from "lucide-react";
 
 const ChatbotInterface = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Namaste! I'm your AI travel assistant for Jharkhand. I can help you in Hindi, English, Santali, and other local languages. How can I assist you today?",
-      sender: 'bot',
-      timestamp: new Date()
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tourism_chat_history');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Load chat failed', e);
     }
-  ]);
+    return [
+      {
+        id: 1,
+        text: "Namaste! I'm your AI travel assistant for Jharkhand. I can help you in Hindi, English, Santali, and other local languages. How can I assist you today?",
+        sender: 'bot',
+        timestamp: new Date()
+      }
+    ];
+  });
   const [inputMessage, setInputMessage] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
 
@@ -33,7 +41,7 @@ const ChatbotInterface = () => {
     "Transportation options"
   ];
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
     const userMessage = {
@@ -46,19 +54,61 @@ const ChatbotInterface = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
 
-    // Simulate bot response
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          text: getBotResponse(inputMessage),
-          sender: 'bot',
-          timestamp: new Date()
-        }
-      ]);
-    }, 1000);
+    try {
+  const origin = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+      const res = await fetch(`${origin}/api/ai-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: inputMessage })
+      });
+      const data = await res.json();
+      const botMessage = {
+        id: userMessage.id + 1,
+        text: data.response || "Sorry, I couldn't generate a response.",
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (err) {
+      console.error('Chatbot error:', err);
+      const errorMessage = {
+        id: messages.length + 2,
+        text: "Sorry, the AI chat service is currently unavailable. Please try again later.",
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
+
+  // persist messages
+  useEffect(() => {
+    try {
+      localStorage.setItem('tourism_chat_history', JSON.stringify(messages));
+    } catch (e) {
+      console.warn('Save chat failed', e);
+    }
+  }, [messages]);
+
+  const generateItinerary = async () => {
+    // use last user message as destinations hint
+    const lastUser = [...messages].reverse().find(m=>m.sender==='user')?.text || 'Betla National Park, Netarhat';
+    const payload = { destinations: lastUser, duration: '3-5 days', budget: 'mid-range', interests: 'wildlife, culture', groupSize: '2-4' };
+    try {
+  const origin = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+      const res = await fetch(`${origin}/api/generate-itinerary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      setMessages(prev=>[...prev, { id: prev.length+1, text, sender: 'bot', timestamp: new Date() }]);
+    } catch (err) {
+      console.error('Itinerary error', err);
+      setMessages(prev=>[...prev, { id: prev.length+1, text: 'Failed to generate itinerary.', sender: 'bot', timestamp: new Date() }]);
+    }
+  }
 
   const getBotResponse = (query) => {
     const responses = [

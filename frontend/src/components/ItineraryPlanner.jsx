@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { MapPin, Calendar, Users, Sparkles, Clock, Star } from "lucide-react";
 
 const ItineraryPlanner = () => {
+  const [showFullItinerary, setShowFullItinerary] = useState(false);
   const [formData, setFormData] = useState({
     destinations: "",
     duration: "",
@@ -16,8 +17,10 @@ const ItineraryPlanner = () => {
     groupSize: "",
     travelStyle: ""
   });
-
   const [generatedItinerary, setGeneratedItinerary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const sampleItinerary = {
     title: "3-Day Eco-Cultural Adventure",
@@ -97,22 +100,26 @@ const ItineraryPlanner = () => {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Preferred Destinations
+                  Preferred Destinations <span className="text-red-500">*</span>
                 </label>
                 <Input 
                   placeholder="e.g., Betla National Park, Netarhat, Deoghar"
                   value={formData.destinations}
                   onChange={(e) => setFormData({...formData, destinations: e.target.value})}
+                  className={fieldErrors.destinations ? "border-red-500" : ""}
                 />
+                {fieldErrors.destinations && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.destinations}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Duration
+                    Duration <span className="text-red-500">*</span>
                   </label>
-                  <Select>
-                    <SelectTrigger>
+                  <Select value={formData.duration} onValueChange={val => setFormData({...formData, duration: val})}>
+                    <SelectTrigger className={fieldErrors.duration ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select duration" />
                     </SelectTrigger>
                     <SelectContent>
@@ -122,14 +129,17 @@ const ItineraryPlanner = () => {
                       <SelectItem value="10+">10+ days</SelectItem>
                     </SelectContent>
                   </Select>
+                  {fieldErrors.duration && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.duration}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Budget Range
+                    Budget Range <span className="text-red-500">*</span>
                   </label>
-                  <Select>
-                    <SelectTrigger>
+                  <Select value={formData.budget} onValueChange={val => setFormData({...formData, budget: val})}>
+                    <SelectTrigger className={fieldErrors.budget ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select budget" />
                     </SelectTrigger>
                     <SelectContent>
@@ -138,16 +148,19 @@ const ItineraryPlanner = () => {
                       <SelectItem value="luxury">Luxury (₹10K+/day)</SelectItem>
                     </SelectContent>
                   </Select>
+                  {fieldErrors.budget && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.budget}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Group Size
+                    Group Size <span className="text-red-500">*</span>
                   </label>
-                  <Select>
-                    <SelectTrigger>
+                  <Select value={formData.groupSize} onValueChange={val => setFormData({...formData, groupSize: val})}>
+                    <SelectTrigger className={fieldErrors.groupSize ? "border-red-500" : ""}>
                       <SelectValue placeholder="Number of travelers" />
                     </SelectTrigger>
                     <SelectContent>
@@ -157,14 +170,17 @@ const ItineraryPlanner = () => {
                       <SelectItem value="group">Group (6+)</SelectItem>
                     </SelectContent>
                   </Select>
+                  {fieldErrors.groupSize && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.groupSize}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Travel Style
+                    Travel Style <span className="text-red-500">*</span>
                   </label>
-                  <Select>
-                    <SelectTrigger>
+                  <Select value={formData.travelStyle} onValueChange={val => setFormData({...formData, travelStyle: val})}>
+                    <SelectTrigger className={fieldErrors.travelStyle ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select style" />
                     </SelectTrigger>
                     <SelectContent>
@@ -174,6 +190,9 @@ const ItineraryPlanner = () => {
                       <SelectItem value="mixed">Mixed</SelectItem>
                     </SelectContent>
                   </Select>
+                  {fieldErrors.travelStyle && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.travelStyle}</p>
+                  )}
                 </div>
               </div>
 
@@ -193,7 +212,19 @@ const ItineraryPlanner = () => {
                 className="w-full"
                 variant="hero"
                 size="lg"
+                disabled={loading}
                 onClick={async () => {
+                  // Validate required fields
+                  const errors = {};
+                  if (!formData.destinations.trim()) errors.destinations = "Please fill this field.";
+                  if (!formData.duration) errors.duration = "Please select duration.";
+                  if (!formData.budget) errors.budget = "Please select budget.";
+                  if (!formData.groupSize) errors.groupSize = "Please select group size.";
+                  if (!formData.travelStyle) errors.travelStyle = "Please select travel style.";
+                  setFieldErrors(errors);
+                  if (Object.keys(errors).length > 0) return;
+                  setLoading(true);
+                  setError("");
                   try {
                     const response = await fetch('/api/generate-itinerary', {
                       method: 'POST',
@@ -201,18 +232,31 @@ const ItineraryPlanner = () => {
                       body: JSON.stringify(formData),
                     });
                     if (!response.ok) {
-                      throw new Error('Failed to generate itinerary');
+                      const errText = await response.text();
+                      throw new Error(errText || 'Failed to generate itinerary');
                     }
                     const data = await response.json();
                     setGeneratedItinerary(data);
                   } catch (error) {
+                    setError(error.message || 'Error generating itinerary');
                     console.error('Error generating itinerary:', error);
+                  } finally {
+                    setLoading(false);
                   }
                 }}
               >
-                <Sparkles className="h-5 w-5 mr-2" />
-                Generate AI Itinerary
+                {loading ? (
+                  <span className="animate-pulse">Generating...</span>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Generate AI Itinerary
+                  </>
+                )}
               </Button>
+              {error && (
+                <p className="text-sm text-red-500 mt-2">{error}</p>
+              )}
             </div>
           </Card>
 
@@ -249,30 +293,7 @@ const ItineraryPlanner = () => {
                     ))}
                   </div>
                 </div>
-
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {generatedItinerary.days.map((day, dayIndex) => (
-                    <div key={dayIndex} className="border-l-2 border-primary/30 pl-4">
-                      <h4 className="font-bold text-foreground mb-2 flex items-center space-x-2">
-                        <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                          {day.day}
-                        </span>
-                        <span>{day.title}</span>
-                      </h4>
-                      <div className="space-y-2 ml-8">
-                        {day.activities.map((activity, actIndex) => (
-                          <div key={actIndex} className="flex items-center space-x-3 text-sm">
-                            <span className="text-muted-foreground font-mono text-xs min-w-[50px]">
-                              {activity.time}
-                            </span>
-                            <span className="text-lg">{getActivityIcon(activity.type)}</span>
-                            <span className="text-foreground">{activity.activity}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* Only show days/activities in expanded section below */}
               </>
             ) : (
               <>
@@ -305,37 +326,45 @@ const ItineraryPlanner = () => {
                     ))}
                   </div>
                 </div>
-
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {sampleItinerary.days.map((day, dayIndex) => (
-                    <div key={dayIndex} className="border-l-2 border-primary/30 pl-4">
-                      <h4 className="font-bold text-foreground mb-2 flex items-center space-x-2">
-                        <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                          {day.day}
-                        </span>
-                        <span>{day.title}</span>
-                      </h4>
-                      <div className="space-y-2 ml-8">
-                        {day.activities.map((activity, actIndex) => (
-                          <div key={actIndex} className="flex items-center space-x-3 text-sm">
-                            <span className="text-muted-foreground font-mono text-xs min-w-[50px]">
-                              {activity.time}
-                            </span>
-                            <span className="text-lg">{getActivityIcon(activity.type)}</span>
-                            <span className="text-foreground">{activity.activity}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* Only show days/activities in expanded section below */}
               </>
             )}
             <div className="mt-6 pt-4 border-t border-border">
-              <Button className="w-full" variant="outline">
+              <Button
+                className="w-full"
+                variant={showFullItinerary ? "secondary" : "outline"}
+                onClick={() => setShowFullItinerary((prev) => !prev)}
+              >
                 <MapPin className="h-4 w-4 mr-2" />
-                View Full Itinerary
+                {showFullItinerary ? "Hide Full Itinerary" : "View Full Itinerary"}
               </Button>
+              {showFullItinerary && (
+                <div className="mt-4">
+                  <div className="space-y-6">
+                    {(generatedItinerary ? generatedItinerary.days : sampleItinerary.days).map((day, dayIndex) => (
+                      <div key={dayIndex} className="border-l-2 border-primary/30 pl-4">
+                        <h4 className="font-bold text-foreground mb-2 flex items-center space-x-2">
+                          <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                            {day.day}
+                          </span>
+                          <span>{day.title}</span>
+                        </h4>
+                        <div className="space-y-2 ml-8">
+                          {day.activities.map((activity, actIndex) => (
+                            <div key={actIndex} className="flex items-center space-x-3 text-sm">
+                              <span className="text-muted-foreground font-mono text-xs min-w-[50px]">
+                                {activity.time}
+                              </span>
+                              <span className="text-lg">{getActivityIcon(activity.type)}</span>
+                              <span className="text-foreground">{activity.activity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </div>

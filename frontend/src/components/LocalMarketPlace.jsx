@@ -1,9 +1,8 @@
-// ...existing code...
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Badge } from "./UI/badge";
 import { ShoppingBag, Star, Truck, Shield, Hand } from "lucide-react";
-import handicrafts from "@/assets/handicrafts.jpeg";
+// import handicrafts from "@/assets/betlaNationalPark/handicrafts.jpeg";
 import SantalBambooBaskets from "@/assets/SantalBambooBasket.jpeg";
 import TribalJewelrySet from "@/assets/TribalJwellerySett.jpeg";
 import HandmadePottery from "@/assets/HandMadePottery.jpeg";
@@ -12,7 +11,7 @@ const products = [
   {
     id: 1,
     name: "Handwoven Dokra Art",
-    image: handicrafts,
+  image: "", // Replace with a valid image import if available
     price: "₹2,500",
     originalPrice: "₹3,200",
     rating: 4.9,
@@ -57,7 +56,10 @@ const products = [
   }
 ];
 
+import { useCart } from "@/contexts/CartContext";
+
 const LocalMarketplace = () => {
+  const { addToCart } = useCart();
   return (
     <section id="marketplace" className="py-20 bg-background">
       <div className="container mx-auto px-4">
@@ -123,7 +125,11 @@ const LocalMarketplace = () => {
                   <span>({product.reviews} reviews)</span>
                 </div>
                 
-                <Button className="w-full" variant="outline">
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => addToCart(product)}
+                >
                   <ShoppingBag className="h-4 w-4 mr-2" />
                   Add to Cart
                 </Button>
@@ -140,8 +146,6 @@ const LocalMarketplace = () => {
         </div>
       </div>
 
-      // ...existing code...
-
         {/* Google Map Embed */}
         <div className="my-12">
           <h2 className="text-2xl font-bold mb-4 text-center">Find Local Artisans on the Map</h2>
@@ -157,9 +161,6 @@ const LocalMarketplace = () => {
             ></iframe>
           </div>
         </div>
-
-// ...existing code...
-
     </section>
   );
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "./UI/button";
 import { MapPin, Star, Users, Camera } from "lucide-react";
-import heroImage from "../assets/BetlaNationalPark.jpg";
+import heroImage from "../assets/betlaNationalPark/BetlaNationalPark.jpg";
 
 const HeroSection = () => {
   const [animate, setAnimate] = useState(false);

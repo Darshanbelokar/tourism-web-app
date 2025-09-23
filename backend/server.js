@@ -8,7 +8,7 @@ import authRoutes from "./routes/auth.js";
 import apiRoutes from "./routes/api.js";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // --------- CORS Configuration ---------
 const corsOptions = {

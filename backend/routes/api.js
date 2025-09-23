@@ -1,3 +1,4 @@
+
 import express from "express";
 const router = express.Router();
 import TouristSpot from "../models/TouristSpot_fixed.js";
@@ -6,11 +7,30 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 import Booking from "../models/Bookings_fixed.js";
 import User from "../models/User.js";
+import Guide from "../models/Guide.js";
+import Feedback from "../models/Feedback.js";
+import Analytics from "../models/Analytics.js";
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Ensure fetch is available (Node 18+ has it natively, otherwise use node-fetch)
+if (typeof fetch === 'undefined') {
+  global.fetch = require('node-fetch');
+}
 
+// POST a new tourist spot
+router.post('/spots', async (req, res) => {
+  try {
+    const newSpot = new TouristSpot(req.body);
+    const savedSpot = await newSpot.save();
+    res.status(201).json(savedSpot);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET all tourist spots
 router.get('/spots', async (req, res) => {
   try {
-
     const spots = await TouristSpot.find();
     res.json(spots);
   } catch (err) {
@@ -18,28 +38,87 @@ router.get('/spots', async (req, res) => {
   }
 });
 
-// POST a new spot (optional admin)
-router.post('/spots', async (req, res) => {
+// POST /api/gemini-flash: Proxy to Gemini 2.5 Flash REST API
+router.post('/gemini-flash', async (req, res) => {
   try {
-    const newSpot = new TouristSpot(req.body);
-    const savedSpot = await newSpot.save();
-    res.json(savedSpot);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    if (!process.env.GOOGLE_API_KEY) {
+      return res.status(503).json({ error: 'GOOGLE_API_KEY not configured' });
+    }
+
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
+    const body = {
+      contents: [
+        {
+          parts: [
+            { text: message }
+          ]
+        }
+      ]
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error || 'Gemini API error' });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Gemini Flash API error:', error);
+    res.status(500).json({ error: 'Failed to call Gemini Flash API' });
   }
 });
 
-// --- Bookings ---
-// POST a booking
-router.post('/bookings', async (req, res) => {
+
+router.post('/ai-chat', async (req, res) => {
   try {
-    const newBooking = new Booking(req.body);
-    const savedBooking = await newBooking.save();
-    res.json(savedBooking);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+    const { message } = req.body;
+    console.log('--- AI Chat Request ---');
+    console.log('API Key loaded:', !!process.env.GOOGLE_API_KEY);
+    console.log('Request body:', req.body);
+    if (!message) {
+      console.log('No message provided');
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    if (!process.env.GOOGLE_API_KEY) {
+      console.log('GOOGLE_API_KEY missing');
+      return res.status(503).json({ error: 'AI service not configured (missing GOOGLE_API_KEY)' });
+    }
+
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+      // Use a supported model id for v1beta API
+      const model = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
+
+      // Use selected language from frontend, default to English
+      const replyLanguage = req.body.language || 'English';
+      const prompt = `You are a helpful AI travel assistant for Jharkhand tourism. Reply in ${replyLanguage} unless the user requests otherwise. ${message}`;
+      console.log('Prompt sent to Gemini:', prompt);
+
+      const result = await model.generateContent(prompt);
+      const aiResponse = result?.response?.text() || 'Sorry, I could not generate a response.';
+      console.log('AI response:', aiResponse);
+
+      res.json({ response: aiResponse });
+    } catch (innerError) {
+      console.error('Google Generative AI error:', innerError);
+      res.status(500).json({ error: 'Google Generative AI error', details: innerError.message });
+    }
+  } catch (error) {
+    console.error('AI chat error:', error);
+    res.status(500).json({ error: 'Failed to generate AI chat response', details: error.message });
   }
 });
+
 
 // GET all bookings
 router.get('/bookings', async (req, res) => {
@@ -51,59 +130,52 @@ router.get('/bookings', async (req, res) => {
   }
 });
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// --- Guide Routes ---
 
-// Initialize Google Generative AI client
-const genAI = process.env.GOOGLE_API_KEY ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY) : null;
-
-router.post('/ai-chat', async (req, res) => {
+// GET all guides
+router.get('/guides', async (req, res) => {
   try {
-    const { message, language, conversationHistory } = req.body;
-
-    // Prepare context for AI
-    const systemPrompt = `You are a multilingual AI travel assistant specializing in Jharkhand tourism. You speak English, Hindi, Santali, Ho, and Kharia languages.
-
-Key information about Jharkhand:
-- Famous destinations: Betla National Park, Netarhat Hill Station, Hundru Falls, Deoghar Temple, Parasnath Hill
-- Cultural aspects: Tribal communities (Santali, Ho, Kharia), traditional dances, handicrafts, bamboo products
-- Cuisine: Dhuska, Bamboo shoot curry, Handia, tribal delicacies
-- Activities: Wildlife safari, tribal village visits, eco-trekking, cultural workshops
-- Best time to visit: October to March
-- Transportation: Ranchi Airport, railway connections, local buses
-
-Always respond in the user's preferred language. Be helpful, informative, and promote sustainable tourism. If asked about other destinations, gently redirect to Jharkhand's attractions.
-
-Current user language: ${language}`;
-
-    // Build conversation history (text fallback for Google)
-    const historySlice = Array.isArray(conversationHistory) ? conversationHistory.slice(-6) : [];
-
-    let conversationText = systemPrompt + "\n\n";
-    historySlice.forEach(msg => {
-      conversationText += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content || msg.text || ''}\n`;
-    });
-    conversationText += `User: ${message}`;
-
-    if (process.env.GOOGLE_API_KEY && genAI) {
-      try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(conversationText);
-        const aiResponse = result?.response?.text() || '';
-        return res.json({ response: aiResponse });
-      } catch (apiError) {
-        console.error('Google Generative API call error:', apiError);
-        return res.status(502).json({ error: 'Google Generative API error', details: apiError.message });
-      }
-    } else {
-      return res.status(503).json({ error: 'AI service not configured on server (set GOOGLE_API_KEY).' });
-    }
-  } catch (error) {
-    console.error('AI Chat error:', error);
-    res.status(500).json({
-      response: 'Sorry, I\'m having trouble connecting right now. Please try again later.'
-    });
+    const guides = await Guide.find();
+    res.json(guides);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
+
+// POST a new guide application
+router.post('/guides', async (req, res) => {
+  try {
+    const newGuide = new Guide(req.body);
+    const savedGuide = await newGuide.save();
+    res.json(savedGuide);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PATCH update guide verification status
+router.patch('/guides/:id/verify', async (req, res) => {
+  try {
+    const guideId = req.params.id;
+    const { verified } = req.body;
+    const updatedGuide = await Guide.findByIdAndUpdate(
+      guideId,
+      { verified },
+      { new: true }
+    );
+    if (!updatedGuide) {
+      return res.status(404).json({ error: 'Guide not found' });
+    }
+    res.json(updatedGuide);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
+// import OpenAI from "openai";
+// const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
 
 router.post('/generate-itinerary', async (req, res) => {
   try {
@@ -170,52 +242,36 @@ Respond ONLY with valid JSON, no additional text.`;
 
     const fullPrompt = systemPrompt + "\n\n" + userPrompt;
 
-    // Prefer Google Gemini if configured
+
+    // Use Gemini 1.5 Flash model for itinerary generation (to avoid quota issues)
     let aiResponse = '';
     if (process.env.GOOGLE_API_KEY) {
       try {
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        // use text-bison for longer textual output / structured content
-        const model = genAI.getGenerativeModel({ model: 'models/text-bison-001' });
+        const model = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
         const result = await model.generateContent(fullPrompt);
         aiResponse = result?.response?.text() || '';
       } catch (gErr) {
         console.error('Google Generative itinerary error:', gErr);
-        // fall back to OpenAI if available
-        if (openai) {
-          console.warn('Falling back to OpenAI itinerary generation due to Google API error');
-        } else {
-          return res.status(502).json({ error: 'Google Generative API error', details: gErr.message });
-        }
+        return res.status(502).json({ error: 'Google Generative API error', details: gErr.message });
       }
     }
 
     if (!aiResponse) {
-      if (openai) {
-        try {
-          const completion = await openai.chat.completions.create({
-            model: DEFAULT_ITINERARY_MODEL,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            max_tokens: 2000,
-            temperature: 0.7,
-          });
-          aiResponse = completion?.choices?.[0]?.message?.content || '';
-        } catch (oErr) {
-          console.error('OpenAI itinerary error:', oErr);
-          return res.status(502).json({ error: 'OpenAI API error' });
-        }
-      } else {
-        return res.status(503).json({ error: 'AI service not configured (set GOOGLE_API_KEY or OPENAI_API_KEY).' });
-      }
+      return res.status(503).json({ error: 'AI service not configured (set GOOGLE_API_KEY).' });
     }
 
     // Parse the JSON response
     let itinerary;
     try {
-      itinerary = JSON.parse(aiResponse);
+      // Remove Markdown code block markers if present
+      let cleanResponse = aiResponse.trim();
+      if (cleanResponse.startsWith('```json')) {
+        cleanResponse = cleanResponse.replace(/^```json/, '').replace(/```$/, '').trim();
+      } else if (cleanResponse.startsWith('```')) {
+        cleanResponse = cleanResponse.replace(/^```/, '').replace(/```$/, '').trim();
+      }
+      itinerary = JSON.parse(cleanResponse);
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', aiResponse);
       // Fallback to a basic structure
@@ -249,38 +305,530 @@ Respond ONLY with valid JSON, no additional text.`;
   }
 });
 
-// List available AI models (Google Generative API if configured, otherwise OpenAI)
-router.get('/ai/models', async (req, res) => {
+
+// --- Feedback Routes ---
+
+// GET all feedback for a target
+router.get('/feedback', async (req, res) => {
   try {
-    // Prefer Google Generative AI
+    const { targetType, targetId, user, rating, sentiment } = req.query;
+    let query = { isActive: true };
+
+    if (targetType) query.targetType = targetType;
+    if (targetId) {
+      // Validate targetId is a valid ObjectId
+      if (mongoose.Types.ObjectId.isValid(targetId)) {
+        query.targetId = targetId;
+      } else {
+        // If invalid, return empty array instead of error
+        return res.json([]);
+      }
+    }
+    if (user) query.user = user;
+    if (rating) query.rating = Number(rating);
+    if (sentiment) query.sentiment.label = sentiment;
+
+    const feedback = await Feedback.find(query)
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST new feedback
+router.post('/feedback', async (req, res) => {
+  try {
+    const newFeedback = new Feedback(req.body);
+    const savedFeedback = await newFeedback.save();
+
+    // Update target ratings (e.g., spot, guide, vendor, product)
+    await updateTargetRating(savedFeedback.targetType, savedFeedback.targetId);
+
+    res.json(savedFeedback);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET feedback by ID
+router.get('/feedback/:id', async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('response.by', 'name');
+    if (!feedback) {
+      return res.status(404).json({ error: 'Feedback not found' });
+    }
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH update feedback (e.g., mark as helpful)
+router.patch('/feedback/:id/helpful', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const feedback = await Feedback.findById(req.params.id);
+
+    if (!feedback) {
+      return res.status(404).json({ error: 'Feedback not found' });
+    }
+
+    if (!feedback.helpful.users.includes(userId)) {
+      feedback.helpful.users.push(userId);
+      feedback.helpful.count = feedback.helpful.users.length;
+      await feedback.save();
+    }
+
+    res.json(feedback);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/feedback/analyze', async (req, res) => {
+  try {
+    const { comment, title } = req.body;
+    const textToAnalyze = `${title || ''} ${comment}`.trim();
+
+    if (!textToAnalyze) {
+      return res.status(400).json({ error: 'Text is required for analysis' });
+    }
+
+    // Use Google Gemini for sentiment analysis and categorization
+    let genAI;
     if (process.env.GOOGLE_API_KEY) {
       try {
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        // listModels is what the earlier error suggested; adapt if the client exposes a different API
-        const models = await genAI.listModels();
-        return res.json({ provider: 'google', models });
-      } catch (gErr) {
-        console.error('Google listModels error:', gErr);
-        // fall through to OpenAI if available
+        genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
+
+        const analysisPrompt = `Analyze the following customer feedback text and provide:
+1. Sentiment score (-1 to 1, where -1 is very negative, 0 is neutral, 1 is very positive)
+2. Sentiment label (positive, neutral, negative)
+3. Confidence score (0-1)
+4. Categories (array of relevant categories from: cleanliness, service, value, location, food, amenities, staff, experience)
+5. Key tags (array of 3-5 important keywords or phrases)
+
+Feedback text: "${textToAnalyze}"
+
+Respond in JSON format only:
+{
+  "sentiment": {
+    "score": 0.0,
+    "label": "neutral",
+    "confidence": 0.0
+  },
+  "categories": ["category1", "category2"],
+  "tags": ["tag1", "tag2", "tag3"]
+}`;
+
+        const result = await model.generateContent(analysisPrompt);
+        const analysisText = result?.response?.text() || '';
+        console.log('Raw AI analysisText:', analysisText);
+        // Clean the response (remove markdown formatting if present)
+        const cleanAnalysis = analysisText.replace(/```json\n?|\n?```/g, '').trim();
+        console.log('Cleaned AI analysis for JSON parse:', cleanAnalysis);
+        try {
+          const analysis = JSON.parse(cleanAnalysis);
+          res.json(analysis);
+        } catch (parseError) {
+          console.error('Failed to parse AI analysis:', cleanAnalysis);
+          console.error('Parse error:', parseError);
+          // Fallback analysis
+          res.json({
+            sentiment: {
+              score: 0,
+              label: 'neutral',
+              confidence: 0.5
+            },
+            categories: ['experience'],
+            tags: ['general']
+          });
+        }
+      } catch (innerError) {
+        console.error('Google Generative AI error:', innerError);
+        console.error('Stack trace:', innerError.stack);
+        res.status(500).json({ error: 'Google Generative AI error', details: innerError.message });
       }
+    } else {
+      return res.status(503).json({ error: 'AI service not configured for feedback analysis' });
+    }
+  } catch (error) {
+    console.error('Feedback analysis error:', error);
+    res.status(500).json({ error: 'Failed to analyze feedback' });
+  }
+});
+
+// GET feedback analytics for a target
+router.get('/feedback/analytics/:targetType/:targetId', async (req, res) => {
+  try {
+    const { targetType, targetId } = req.params;
+
+    // Validate targetId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(targetId)) {
+      return res.json({
+        totalFeedback: 0,
+        averageRating: 0,
+        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        sentimentDistribution: { positive: 0, neutral: 0, negative: 0 },
+        topCategories: [],
+        recentFeedback: []
+      });
     }
 
-    // Fallback to OpenAI models list if OpenAI key is configured
-    if (openai) {
-      try {
-        // openai.models.list() returns available models in recent SDKs
-        const resp = await openai.models.list();
-        return res.json({ provider: 'openai', models: resp.data || resp });
-      } catch (oErr) {
-        console.error('OpenAI list models error:', oErr);
-        return res.status(502).json({ error: 'OpenAI models listing error', details: oErr.message });
-      }
-    }
+    const feedback = await Feedback.find({
+      targetType,
+      targetId,
+      isActive: true
+    });
 
-    return res.status(503).json({ error: 'AI service not configured (set GOOGLE_API_KEY or OPENAI_API_KEY).' });
+    const analytics = {
+      totalFeedback: feedback.length,
+      averageRating: feedback.length > 0
+        ? feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length
+        : 0,
+      ratingDistribution: {
+        1: feedback.filter(f => f.rating === 1).length,
+        2: feedback.filter(f => f.rating === 2).length,
+        3: feedback.filter(f => f.rating === 3).length,
+        4: feedback.filter(f => f.rating === 4).length,
+        5: feedback.filter(f => f.rating === 5).length
+      },
+      sentimentDistribution: {
+        positive: feedback.filter(f => f.sentiment?.label === 'positive').length,
+        neutral: feedback.filter(f => f.sentiment?.label === 'neutral').length,
+        negative: feedback.filter(f => f.sentiment?.label === 'negative').length
+      },
+      topCategories: getTopCategories(feedback),
+      recentFeedback: feedback.slice(0, 5).map(f => ({
+        id: f._id,
+        rating: f.rating,
+        comment: f.comment,
+        createdAt: f.createdAt
+      }))
+    };
+
+    res.json(analytics);
   } catch (err) {
-    console.error('AI models endpoint error:', err);
-    return res.status(500).json({ error: 'Failed to list AI models', details: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Helper function to update target ratings
+async function updateTargetRating(targetType, targetId) {
+  try {
+    const feedback = await Feedback.find({ targetType, targetId, isActive: true });
+
+    if (feedback.length === 0) return;
+
+    const averageRating = feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length;
+
+    // Update the target model based on type
+    const Model = getModelByType(targetType);
+    if (Model) {
+      await Model.findByIdAndUpdate(targetId, {
+        'ratings.average': averageRating,
+        'ratings.count': feedback.length
+      });
+    }
+  } catch (error) {
+    console.error('Error updating target rating:', error);
+  }
+}
+
+// Helper function to get model by type
+function getModelByType(type) {
+  const models = {
+    spot: TouristSpot,
+    guide: Guide,
+    booking: Booking
+  };
+  return models[type];
+}
+
+// Helper function to get top categories
+function getTopCategories(feedback) {
+  const categoryCount = {};
+  feedback.forEach(f => {
+    if (f.categories) {
+      f.categories.forEach(cat => {
+        categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+      });
+    }
+  });
+
+  return Object.entries(categoryCount)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
+    .map(([category, count]) => ({ category, count }));
+}
+
+// --- Analytics Routes ---
+
+// GET dashboard overview analytics
+router.get('/analytics/overview', async (req, res) => {
+  try {
+    const { period = 'monthly', days = 30 } = req.query;
+    const endDate = new Date();
+    const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));
+
+    // Get user analytics
+    const totalUsers = await User.countDocuments();
+    const newUsers = await User.countDocuments({ createdAt: { $gte: startDate } });
+    const activeUsers = await User.countDocuments({
+      lastLogin: { $gte: startDate }
+    });
+
+    // Get booking analytics
+    const totalBookings = await Booking.countDocuments();
+    const completedBookings = await Booking.countDocuments({
+      status: 'completed',
+      createdAt: { $gte: startDate }
+    });
+    const cancelledBookings = await Booking.countDocuments({
+      status: 'cancelled',
+      createdAt: { $gte: startDate }
+    });
+
+    // Get revenue analytics (assuming bookings have price field)
+    const recentBookings = await Booking.find({
+      status: 'completed',
+      createdAt: { $gte: startDate }
+    });
+    const revenue = recentBookings.reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+
+    // Get feedback analytics
+    const totalFeedback = await Feedback.countDocuments({
+      createdAt: { $gte: startDate }
+    });
+    const averageRating = totalFeedback > 0
+      ? await Feedback.aggregate([
+          { $match: { createdAt: { $gte: startDate } } },
+          { $group: { _id: null, avg: { $avg: '$rating' } } }
+        ]).then(result => result[0]?.avg || 0)
+      : 0;
+
+    // Get top destinations
+    const topDestinations = await Booking.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: '$spot', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'touristspots',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'spot'
+        }
+      },
+      { $unwind: '$spot' },
+      { $project: { name: '$spot.name', count: 1 } }
+    ]);
+
+    const analytics = {
+      overview: {
+        totalUsers,
+        newUsers,
+        activeUsers,
+        totalBookings,
+        completedBookings,
+        cancelledBookings,
+        revenue,
+        totalFeedback,
+        averageRating
+      },
+      topDestinations,
+      period,
+      dateRange: { startDate, endDate }
+    };
+
+    res.json(analytics);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET analytics by type and period
+router.get('/analytics/:type/:period', async (req, res) => {
+  try {
+    const { type, period } = req.params;
+    const { limit = 30 } = req.query;
+
+    const analytics = await Analytics.find({
+      type,
+      period
+    })
+    .sort({ date: -1 })
+    .limit(Number(limit));
+
+    res.json(analytics);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST create analytics data (for scheduled jobs)
+router.post('/analytics', async (req, res) => {
+  try {
+    const newAnalytics = new Analytics(req.body);
+    const savedAnalytics = await newAnalytics.save();
+    res.json(savedAnalytics);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET real-time metrics
+router.get('/analytics/realtime', async (req, res) => {
+  try {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - (60 * 60 * 1000));
+
+    // Active users in last hour
+    const activeUsers = await User.countDocuments({
+      lastLogin: { $gte: oneHourAgo }
+    });
+
+    // Recent bookings
+    const recentBookings = await Booking.countDocuments({
+      createdAt: { $gte: oneHourAgo }
+    });
+
+    // Recent feedback
+    const recentFeedback = await Feedback.countDocuments({
+      createdAt: { $gte: oneHourAgo }
+    });
+
+    // System health (mock data - in real app, get from monitoring)
+    const systemHealth = {
+      uptime: 99.9,
+      responseTime: 245, // ms
+      errorRate: 0.1,
+      activeConnections: Math.floor(Math.random() * 100) + 50
+    };
+
+    res.json({
+      timestamp: now,
+      activeUsers,
+      recentBookings,
+      recentFeedback,
+      systemHealth
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET user engagement analytics
+router.get('/analytics/engagement', async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const startDate = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+
+    // User activity over time
+    const userActivity = await User.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    // Booking trends
+    const bookingTrends = await Booking.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
+          bookings: { $sum: 1 },
+          revenue: { $sum: '$totalPrice' }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    // Feedback trends
+    const feedbackTrends = await Feedback.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
+          feedback: { $sum: 1 },
+          averageRating: { $avg: '$rating' }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    res.json({
+      userActivity,
+      bookingTrends,
+      feedbackTrends,
+      period: `${days} days`
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET predictive analytics (AI-powered insights)
+router.get('/analytics/predictive', async (req, res) => {
+  try {
+    // This would typically use ML models, but for now we'll provide basic predictions
+    const { type = 'bookings' } = req.query;
+
+    let predictions = {};
+
+    if (type === 'bookings') {
+      // Simple trend-based prediction
+      const recentBookings = await Booking.find({
+        createdAt: { $gte: new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)) }
+      });
+
+      const dailyBookings = recentBookings.length / 30;
+      const predictedBookings = Math.round(dailyBookings * 7); // Next week prediction
+
+      predictions = {
+        type: 'bookings',
+        currentTrend: dailyBookings,
+        nextWeekPrediction: predictedBookings,
+        confidence: 0.75,
+        factors: ['seasonal trends', 'marketing campaigns', 'user growth']
+      };
+    } else if (type === 'revenue') {
+      const recentRevenue = await Booking.aggregate([
+        { $match: { createdAt: { $gte: new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)) } } },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+      ]);
+
+      const dailyRevenue = (recentRevenue[0]?.total || 0) / 30;
+      const predictedRevenue = Math.round(dailyRevenue * 7);
+
+      predictions = {
+        type: 'revenue',
+        currentTrend: dailyRevenue,
+        nextWeekPrediction: predictedRevenue,
+        confidence: 0.7,
+        factors: ['booking volume', 'average booking value', 'seasonal pricing']
+      };
+    }
+
+    res.json(predictions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
