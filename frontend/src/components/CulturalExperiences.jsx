@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Users, Music, Palette, Home, Calendar } from "lucide-react";
-import DokraBronzeFigurines from "@/assets/Dokra art.jpeg";
 
 const experiences = [
   {
@@ -30,9 +29,7 @@ const experiences = [
     icon: Palette,
     duration: "Half day",
     price: "₹1,200/person",
-    includes: ["Materials", "Expert guidance", "Take home crafts"],
-    image: DokraBronzeFigurines,
-    featured: true
+    includes: ["Materials", "Expert guidance", "Take home crafts"]
   },
   {
     id: 4,

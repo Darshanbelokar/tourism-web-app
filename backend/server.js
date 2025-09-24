@@ -8,7 +8,7 @@ import authRoutes from "./routes/auth.js";
 import apiRoutes from "./routes/api.js";
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --------- CORS Configuration ---------
 const corsOptions = {
@@ -18,6 +18,11 @@ const corsOptions = {
 
     // Allow all localhost ports during development
     if (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1") || origin.startsWith("http://192.168")) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel deployments
+    if (origin.includes("vercel.app") || origin.includes("tourism-web")) {
       return callback(null, true);
     }
 
