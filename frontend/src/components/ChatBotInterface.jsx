@@ -3,6 +3,7 @@ import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Input } from "./UI/input";
 import { MessageCircle, Send, Bot, User, Globe, Mic, X } from "lucide-react";
+import { getApiBase } from '../lib/api';
 
 const ChatbotInterface = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,8 +56,7 @@ const ChatbotInterface = () => {
     setInputMessage("");
 
     try {
-  const origin = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-      const res = await fetch(`${origin}/api/ai-chat`, {
+      const res = await fetch(`${getApiBase()}/api/ai-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: inputMessage })
@@ -95,8 +95,7 @@ const ChatbotInterface = () => {
     const lastUser = [...messages].reverse().find(m=>m.sender==='user')?.text || 'Betla National Park, Netarhat';
     const payload = { destinations: lastUser, duration: '3-5 days', budget: 'mid-range', interests: 'wildlife, culture', groupSize: '2-4' };
     try {
-  const origin = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-      const res = await fetch(`${origin}/api/generate-itinerary`, {
+      const res = await fetch(`${getApiBase()}/api/generate-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

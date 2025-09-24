@@ -3,8 +3,7 @@ import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Input } from "./UI/input";
 import { MessageCircle, Send, Bot, User, Globe, Mic, X, Loader2 } from "lucide-react";
-
-const getApiBase = () => 'http://localhost:3000';
+import { getApiBase } from '../lib/api';
 
 const ChatbotInterface = () => {
   const [isOpen, setIsOpen] = useState(false);
