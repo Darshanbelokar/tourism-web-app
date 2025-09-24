@@ -127,8 +127,6 @@ function FeedbackSystem({ targetType, targetId }) {
           }
         }
       }
-        }
-      }
 
       setFeedback(feedbackData);
       setAnalytics(analyticsData);
