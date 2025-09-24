@@ -4,6 +4,7 @@ import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { MapPin, Star, Clock, Camera, ArrowLeft, AlertCircle } from "lucide-react";
 import FeedbackSystem from "./FeedbackSystem";
+import { getApiBase } from "@/lib/api";
 import BetlaNationalPark from "@/assets/betlaNationalPark/BetlaNationalPark.jpg";
 import { Tiger, Image2, Image3, Image4 } from "@/assets/betlaNationalPark/betlaWildlife";
 import Netarhat from "@/assets/netarhatHillStation/Netarhat.jpg";
@@ -25,11 +26,6 @@ const DestinationDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalImage, setModalImage] = useState(null);
-
-  // Helper to compute API base
-  const getApiBase = () => {
-    return import.meta.env.VITE_BACKEND_URL || '';
-  };
 
   // Static data mapping for known destinations
   const getStaticDestinationData = (destId) => {
@@ -109,15 +105,47 @@ const DestinationDetail = () => {
   useEffect(() => {
     const fetchDestination = async () => {
       try {
+        // First try to fetch from API
+        try {
+          const response = await fetch(`${getApiBase()}/api/spots`);
+          if (response.ok) {
+            const spots = await response.json();
+            // Find the spot with matching ID (could be _id or id)
+            const spot = spots.find(s => s._id === id || s.id === id || s.id === parseInt(id));
+            if (spot) {
+              // Transform API data to match component expectations
+              const transformedSpot = {
+                id: spot._id || spot.id,
+                name: spot.name,
+                image: BetlaNationalPark, // Default fallback image
+                rating: spot.ratings?.average || 4.5,
+                duration: "1-2 days",
+                description: spot.description || "Beautiful destination in Jharkhand",
+                highlights: spot.highlights || ["Scenic Beauty", "Cultural Experience"],
+                location: spot.location,
+                images: [BetlaNationalPark], // Default fallback
+                details: {
+                  bestTime: spot.visitingHours || "Throughout the year",
+                  entryFee: spot.entryFee || "Varies",
+                  activities: spot.highlights || ["Sightseeing"],
+                  accommodation: "Available nearby"
+                }
+              };
+              setDestination(transformedSpot);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (apiError) {
+          console.log('API fetch failed, trying static data');
+        }
+
+        // Fallback to static data
         const staticData = getStaticDestinationData(id);
         if (staticData) {
           setDestination(staticData);
         } else {
-          // Try API call
-          const response = await fetch(`${getApiBase()}/api/destinations/${id}`);
-          if (!response.ok) throw new Error('Destination not found');
-          const data = await response.json();
-          setDestination(data);
+          throw new Error('Destination not found');
         }
       } catch (err) {
         setError(err.message);
