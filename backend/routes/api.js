@@ -389,6 +389,79 @@ router.patch('/feedback/:id/helpful', async (req, res) => {
   }
 });
 
+router.post('/analyze', async (req, res) => {
+  try {
+    const { comment, title } = req.body;
+    const textToAnalyze = `${title || ''} ${comment}`.trim();
+
+    if (!textToAnalyze) {
+      return res.status(400).json({ error: 'Text is required for analysis' });
+    }
+
+    // Use Google Gemini for sentiment analysis and categorization
+    let genAI;
+    if (process.env.GOOGLE_API_KEY) {
+      try {
+        genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
+
+        const analysisPrompt = `Analyze the following customer feedback text and provide:
+1. Sentiment score (-1 to 1, where -1 is very negative, 0 is neutral, 1 is very positive)
+2. Sentiment label (positive, neutral, negative)
+3. Confidence score (0-1)
+4. Categories (array of relevant categories from: cleanliness, service, value, location, food, amenities, staff, experience)
+5. Key tags (array of 3-5 important keywords or phrases)
+
+Feedback text: "${textToAnalyze}"
+
+Respond in JSON format only:
+{
+  "sentiment": {
+    "score": 0.0,
+    "label": "neutral",
+    "confidence": 0.0
+  },
+  "categories": ["category1", "category2"],
+  "tags": ["tag1", "tag2", "tag3"]
+}`;
+
+        const result = await model.generateContent(analysisPrompt);
+        const analysisText = result?.response?.text() || '';
+        console.log('Raw AI analysisText:', analysisText);
+        // Clean the response (remove markdown formatting if present)
+        const cleanAnalysis = analysisText.replace(/```json\n?|\n?```/g, '').trim();
+        console.log('Cleaned AI analysis for JSON parse:', cleanAnalysis);
+        try {
+          const analysis = JSON.parse(cleanAnalysis);
+          res.json(analysis);
+        } catch (parseError) {
+          console.error('Failed to parse AI analysis:', cleanAnalysis);
+          console.error('Parse error:', parseError);
+          // Fallback analysis
+          res.json({
+            sentiment: {
+              score: 0,
+              label: 'neutral',
+              confidence: 0.5
+            },
+            categories: ['experience'],
+            tags: ['general']
+          });
+        }
+      } catch (innerError) {
+        console.error('Google Generative AI error:', innerError);
+        console.error('Stack trace:', innerError.stack);
+        res.status(500).json({ error: 'Google Generative AI error', details: innerError.message });
+      }
+    } else {
+      return res.status(503).json({ error: 'AI service not configured for feedback analysis' });
+    }
+  } catch (error) {
+    console.error('Feedback analysis error:', error);
+    res.status(500).json({ error: 'Failed to analyze feedback' });
+  }
+});
+
 router.post('/feedback/analyze', async (req, res) => {
   try {
     const { comment, title } = req.body;
