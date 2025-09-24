@@ -94,7 +94,16 @@ function FeedbackSystem({ targetType, targetId }) {
 
   const fetchFeedback = async () => {
     try {
-      const feedbackRes = await fetch(`${getApiBase()}/api/feedback?targetType=${targetType}&targetId=${targetId}`);
+      // Build query parameters
+      let queryParams = new URLSearchParams();
+      if (targetType) {
+        queryParams.append('targetType', targetType);
+      }
+      if (targetId && targetId !== null && targetId !== 'null') {
+        queryParams.append('targetId', targetId);
+      }
+      
+      const feedbackRes = await fetch(`${getApiBase()}/api/feedback?${queryParams.toString()}`);
       let feedbackData = [];
       if (feedbackRes.ok) {
         const feedbackText = await feedbackRes.text();
@@ -105,14 +114,19 @@ function FeedbackSystem({ targetType, targetId }) {
         }
       }
 
-      const analyticsRes = await fetch(`${getApiBase()}/api/feedback/analytics/${targetType}/${targetId}`);
+      // Only fetch analytics if we have a specific targetId
       let analyticsData = null;
-      if (analyticsRes.ok) {
-        const analyticsText = await analyticsRes.text();
-        try {
-          analyticsData = analyticsText ? JSON.parse(analyticsText) : null;
-        } catch (e) {
-          analyticsData = null;
+      if (targetId && targetId !== null && targetId !== 'null') {
+        const analyticsRes = await fetch(`${getApiBase()}/api/feedback/analytics/${targetType}/${targetId}`);
+        if (analyticsRes.ok) {
+          const analyticsText = await analyticsRes.text();
+          try {
+            analyticsData = analyticsText ? JSON.parse(analyticsText) : null;
+          } catch (e) {
+            analyticsData = null;
+          }
+        }
+      }
         }
       }
 
