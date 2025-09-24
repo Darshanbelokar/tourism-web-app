@@ -128,6 +128,22 @@ function FeedbackSystem({ targetType, targetId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate form data
+    if (!newFeedback.destinationId) {
+      alert('Please select a destination');
+      return;
+    }
+    
+    if (!newFeedback.title.trim()) {
+      alert('Please enter a review title');
+      return;
+    }
+    
+    if (!newFeedback.comment.trim()) {
+      alert('Please enter a detailed review');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -140,20 +156,30 @@ function FeedbackSystem({ targetType, targetId }) {
           comment: newFeedback.comment
         })
       });
-      if (!analysisRes.ok) {
-        throw new Error('Failed to analyze feedback');
+      
+      let analysis = {};
+      if (analysisRes.ok) {
+        analysis = await analysisRes.json();
+      } else {
+        console.warn('AI analysis failed, using defaults');
+        analysis = {
+          sentiment: { score: 0, label: 'neutral', confidence: 0.5 },
+          categories: ['experience'],
+          tags: []
+        };
       }
-      const analysis = await analysisRes.json();
 
       // Then submit the feedback
       const feedbackPayload = {
-        ...newFeedback,
         user: currentUserId,
         targetType: targetType || 'spot',
         targetId: newFeedback.destinationId,
+        rating: parseInt(newFeedback.rating),
+        title: newFeedback.title.trim(),
+        comment: newFeedback.comment.trim(),
         sentiment: analysis.sentiment,
-        categories: analysis.categories,
-        tags: analysis.tags
+        categories: analysis.categories || [],
+        tags: analysis.tags || []
       };
       
       console.log('Feedback payload being sent:', feedbackPayload);
@@ -165,11 +191,13 @@ function FeedbackSystem({ targetType, targetId }) {
       });
 
       if (feedbackRes.ok) {
+        alert('Feedback submitted successfully!');
         setNewFeedback({ title: '', comment: '', rating: 5, destinationId: '' });
         fetchFeedback(); // Refresh the feedback list
       } else {
         const errorData = await feedbackRes.json();
-        throw new Error(errorData.message || 'Failed to submit feedback');
+        console.error('Backend error response:', errorData);
+        throw new Error(errorData.error || 'Failed to submit feedback');
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);

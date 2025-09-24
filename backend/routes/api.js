@@ -399,14 +399,48 @@ router.get('/feedback', async (req, res) => {
 // POST new feedback
 router.post('/feedback', async (req, res) => {
   try {
+    console.log('📝 Feedback submission received:', req.body);
+    
+    // Validate required fields
+    const { user, targetType, targetId, rating, comment } = req.body;
+    
+    if (!user) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    if (!targetType) {
+      return res.status(400).json({ error: 'Target type is required' });
+    }
+    
+    if (!targetId) {
+      return res.status(400).json({ error: 'Target ID is required' });
+    }
+    
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+    
+    if (!comment || comment.trim() === '') {
+      return res.status(400).json({ error: 'Comment is required' });
+    }
+
     const newFeedback = new Feedback(req.body);
     const savedFeedback = await newFeedback.save();
+    
+    console.log('✅ Feedback saved successfully:', savedFeedback._id);
 
     // Update target ratings (e.g., spot, guide, vendor, product)
     await updateTargetRating(savedFeedback.targetType, savedFeedback.targetId);
 
     res.json(savedFeedback);
   } catch (err) {
+    console.error('❌ Error saving feedback:', err.message);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ error: err.message });
+    }
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'You have already submitted feedback for this destination' });
+    }
     res.status(400).json({ error: err.message });
   }
 });
