@@ -214,7 +214,7 @@ const DestinationDetail = () => {
                 ))}
               </div>
             </div>
-            <FeedbackSystem targetType="destination" targetId={destination.id} />
+            <FeedbackSystem targetType="spot" targetId={destination.id} />
           </div>
         </Card>
       </div>
