@@ -1,6 +1,12 @@
 # Render Backend Deployment Guide
 
-## 🚀 **Deploy Backend to Render**
+## � **QUICK FIX for Current Build Error**
+
+If you're seeing "Command 'build' not found" error, go to your Render service settings and change:
+- **Build Command**: Change from `yarn install; yarn build` to `npm install`
+- **Start Command**: Should be `npm start`
+
+## �🚀 **Deploy Backend to Render**
 
 ### ✅ **Backend is Ready for Render:**
 - ✅ `package.json` has correct start script: `"start": "node server.js"`
@@ -23,8 +29,14 @@
 - **Region**: Choose closest to your users
 - **Branch**: `main`
 - **Root Directory**: `backend`
-- **Build Command**: `npm install`
+- **Build Command**: `npm install` (IMPORTANT: Remove any default yarn build command)
 - **Start Command**: `npm start`
+
+#### **⚠️ IMPORTANT: Remove Default Build Command**
+Render might auto-detect and set a build command like `yarn install; yarn build`. 
+**You MUST change this to just**: `npm install`
+
+This is because your backend is a server application, not a static site that needs building.
 
 #### **3. Add Environment Variables**
 In Render Dashboard → Environment tab, add these variables:
