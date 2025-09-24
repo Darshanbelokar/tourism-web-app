@@ -181,7 +181,7 @@ function FeedbackSystem({ targetType, targetId }) {
 
   const handleHelpful = async (feedbackId) => {
     try {
-      await fetch(`/api/feedback/${feedbackId}/helpful`, {
+      await fetch(`${getApiBase()}/api/feedback/${feedbackId}/helpful`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: 'current-user-id' }) // Replace with actual user ID
