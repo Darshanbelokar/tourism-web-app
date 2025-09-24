@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getApiBase } from '../lib/api';
 
 function AnalyticsDashboard() {
   const [overview, setOverview] = useState(null);
@@ -12,13 +13,13 @@ function AnalyticsDashboard() {
     async function fetchAnalytics() {
       try {
         setLoading(true);
-        const overviewRes = await fetch('/api/analytics/overview');
+        const overviewRes = await fetch(`${getApiBase()}/api/analytics/overview`);
         const overviewData = await overviewRes.json();
 
-        const engagementRes = await fetch('/api/analytics/engagement?days=30');
+        const engagementRes = await fetch(`${getApiBase()}/api/analytics/engagement?days=30`);
         const engagementData = await engagementRes.json();
 
-        const predictiveRes = await fetch('/api/analytics/predictive?type=bookings');
+        const predictiveRes = await fetch(`${getApiBase()}/api/analytics/predictive?type=bookings`);
         const predictiveData = await predictiveRes.json();
 
         setOverview(overviewData.overview);

@@ -6,6 +6,7 @@ import { Input } from "./UI/input";
 import { Textarea } from "./UI/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./UI/select";
 import { MapPin, Calendar, Users, Sparkles, Clock, Star } from "lucide-react";
+import { getApiBase } from '../lib/api';
 
 const ItineraryPlanner = () => {
   const [showFullItinerary, setShowFullItinerary] = useState(false);
@@ -226,7 +227,7 @@ const ItineraryPlanner = () => {
                   setLoading(true);
                   setError("");
                   try {
-                    const response = await fetch('/api/generate-itinerary', {
+                    const response = await fetch(`${getApiBase()}/api/generate-itinerary`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(formData),

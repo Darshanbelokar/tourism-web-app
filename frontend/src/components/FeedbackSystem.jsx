@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import { getApiBase } from '../lib/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -52,7 +53,7 @@ function FeedbackSystem({ targetType, targetId }) {
     // Fetch list of destinations from backend
     const fetchDestinations = async () => {
       try {
-        const res = await fetch('/api/spots');
+        const res = await fetch(`${getApiBase()}/api/spots`);
         if (!res.ok) throw new Error('Failed to fetch destinations');
         const data = await res.json();
         console.log('Fetched destinations:', data);
@@ -93,7 +94,7 @@ function FeedbackSystem({ targetType, targetId }) {
 
   const fetchFeedback = async () => {
     try {
-      const feedbackRes = await fetch(`/api/feedback?targetType=${targetType}&targetId=${targetId}`);
+      const feedbackRes = await fetch(`${getApiBase()}/api/feedback?targetType=${targetType}&targetId=${targetId}`);
       let feedbackData = [];
       if (feedbackRes.ok) {
         const feedbackText = await feedbackRes.text();
@@ -104,7 +105,7 @@ function FeedbackSystem({ targetType, targetId }) {
         }
       }
 
-      const analyticsRes = await fetch(`/api/feedback/analytics/${targetType}/${targetId}`);
+      const analyticsRes = await fetch(`${getApiBase()}/api/feedback/analytics/${targetType}/${targetId}`);
       let analyticsData = null;
       if (analyticsRes.ok) {
         const analyticsText = await analyticsRes.text();
@@ -131,7 +132,7 @@ function FeedbackSystem({ targetType, targetId }) {
 
     try {
       // First, analyze the feedback with AI
-      const analysisRes = await fetch('/api/analyze', {
+      const analysisRes = await fetch(`${getApiBase()}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +158,7 @@ function FeedbackSystem({ targetType, targetId }) {
       
       console.log('Feedback payload being sent:', feedbackPayload);
       
-      const feedbackRes = await fetch('/api/feedback', {
+      const feedbackRes = await fetch(`${getApiBase()}/api/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedbackPayload)
