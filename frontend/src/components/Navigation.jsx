@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "./UI/button";
 import { Menu, X, MapPin, Calendar, User, LogOut, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
@@ -48,15 +49,15 @@ const Navigation = () => {
             <a href="#planner" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
               Plan Trip
             </a>
-            <a href="/analytics" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+            <Link to="/analytics" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
               Analytics
-            </a>
-            <a href="/feedback" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+            </Link>
+            <Link to="/feedback" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
               Feedback
-            </a>
-            <a href="/transport" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+            </Link>
+            <Link to="/transport" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
               Transport
-            </a>
+            </Link>
 
             {/* Cart Icon */}
             <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
@@ -152,6 +153,27 @@ const Navigation = () => {
               >
                 Plan Trip
               </a>
+              <Link
+                to="/analytics"
+                className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Analytics
+              </Link>
+              <Link
+                to="/feedback"
+                className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Feedback
+              </Link>
+              <Link
+                to="/transport"
+                className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Transport
+              </Link>
 
               {user ? (
                 <div className="flex flex-col space-y-3 pt-2 border-t border-border/30">
