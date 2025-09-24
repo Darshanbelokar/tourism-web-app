@@ -1,14 +1,23 @@
 {
-  "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "npm install && cd frontend && npm install && cd ../api && npm install",
-  "builds": [
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/hello.js": {
+      "runtime": "@vercel/node@3.2.8"
+    },
+    "api/spots.js": {
+      "runtime": "@vercel/node@3.2.8"
+    },
+    "api/feedback.js": {
+      "runtime": "@vercel/node@3.2.8"
+    },
+    "api/analyze.js": {
+      "runtime": "@vercel/node@3.2.8"
+    },
+    "api/gemini-flash.js": {
+      "runtime": "@vercel/node@3.2.8"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
