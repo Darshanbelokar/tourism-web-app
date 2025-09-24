@@ -15,11 +15,31 @@
   ],
   "routes": [
     {
-      "handle": "filesystem"
+      "src": "/assets/(.*)",
+      "dest": "/frontend/dist/assets/$1"
     },
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/frontend/dist/favicon.ico"
+    },
+    {
+      "src": "/logo(.*)",
+      "dest": "/frontend/dist/logo$1"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/frontend/dist/manifest.json"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/frontend/dist/robots.txt"
     },
     {
       "src": "/(.*)",
