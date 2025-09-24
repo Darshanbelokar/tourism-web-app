@@ -2,7 +2,7 @@
 export const getApiBase = () => {
   // For development
   if (import.meta.env.DEV) {
-    return 'http://localhost:3000';
+    return 'http://localhost:3001';
   }
   
   // For production - replace with your actual backend URL

@@ -121,67 +121,70 @@ function TransportTracker() {
         </Button>
       </div>
 
-      <div className="grid gap-4 mb-6">
+      <div className="space-y-4 mb-6">
         {transportRoutes.map((route) => (
-          <Card key={route.id} className="p-4 hover:shadow-lg transition-shadow">
-            <div className="grid md:grid-cols-6 gap-4 items-center">
-              {/* Transport Type & Route */}
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
+          <Card key={route.id} className="p-6 hover:shadow-lg transition-shadow">
+            {/* Route Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-50 rounded-lg">
                   {getTransportIcon(route.type)}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{route.from}</span>
+                  <div className="flex items-center gap-2 text-lg">
+                    <span className="font-bold">{route.from}</span>
                     <span className="text-gray-400">→</span>
-                    <span className="font-semibold">{route.to}</span>
+                    <span className="font-bold">{route.to}</span>
                   </div>
-                  <p className="text-sm text-gray-500">{route.operator}</p>
+                  <p className="text-gray-600">{route.operator}</p>
                 </div>
               </div>
+              
+              <div className="text-right">
+                <div className="text-2xl font-bold text-green-600">{route.price}</div>
+                <div className="text-sm text-gray-500">per person</div>
+              </div>
+            </div>
 
+            {/* Route Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               {/* Timing */}
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <div>
+              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+                <Clock className="w-5 h-5 text-gray-600 mb-2" />
+                <div className="text-center">
                   <div className="font-semibold">{route.departure} - {route.arrival}</div>
                   <div className="text-sm text-gray-500">{route.duration}</div>
                 </div>
               </div>
 
               {/* Status */}
-              <div>
-                <Badge className={`${getStatusColor(route.status)} border-0`}>
-                  {route.status}
-                </Badge>
+              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+                <div className="mb-2">
+                  <Badge className={`${getStatusColor(route.status)} border-0`}>
+                    {route.status}
+                  </Badge>
+                </div>
                 {route.delay > 0 && (
-                  <div className="text-sm text-red-600 mt-1">+{route.delay} min</div>
+                  <div className="text-sm text-red-600">+{route.delay} min delay</div>
                 )}
               </div>
 
               {/* Next Stop */}
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <div>
+              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+                <MapPin className="w-5 h-5 text-gray-600 mb-2" />
+                <div className="text-center">
                   <div className="font-medium">Next Stop</div>
                   <div className="text-sm text-gray-600">{route.nextStop}</div>
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="text-right">
-                <div className="text-lg font-bold text-green-600">{route.price}</div>
-                <div className="text-sm text-gray-500">per person</div>
-              </div>
-
               {/* Action */}
-              <div>
+              <div className="flex flex-col items-center justify-center p-3">
                 <Button 
-                  size="sm" 
                   onClick={() => setSelectedRoute(route)}
-                  variant="outline"
+                  className="w-full"
                 >
-                  Track
+                  Track Route
                 </Button>
               </div>
             </div>
@@ -190,24 +193,42 @@ function TransportTracker() {
       </div>
 
       {/* Transport Tips */}
-      <Card className="p-6 bg-blue-50">
-        <h3 className="text-xl font-semibold mb-4 text-blue-800">Transport Tips for Jharkhand</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-medium mb-2">Best Travel Times</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Early morning (6 AM - 8 AM) for hill stations</li>
-              <li>• Avoid monsoon season (July-September) for rural areas</li>
-              <li>• Book train tickets in advance during festivals</li>
-            </ul>
+      <Card className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <h3 className="text-2xl font-bold mb-6 text-blue-800">Transport Tips for Jharkhand</h3>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg text-blue-700">Best Travel Times</h4>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">Early morning (6 AM - 8 AM) for hill stations</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">Avoid monsoon season (July-September) for rural areas</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">Book train tickets in advance during festivals</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h4 className="font-medium mb-2">Popular Routes</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Ranchi ↔ Netarhat (Most scenic route)</li>
-              <li>• Jamshedpur ↔ Hundru Falls (Day trip)</li>
-              <li>• Ranchi ↔ Betla National Park (Wildlife tour)</li>
-            </ul>
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg text-blue-700">Popular Routes</h4>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">Ranchi ↔ Netarhat (Most scenic route)</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">Jamshedpur ↔ Hundru Falls (Day trip)</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">Ranchi ↔ Betla National Park (Wildlife tour)</span>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
@@ -215,47 +236,76 @@ function TransportTracker() {
       {/* Selected Route Details Modal */}
       {selectedRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold">Route Details</h3>
+          <Card className="w-full max-w-lg p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">Route Details</h3>
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => setSelectedRoute(null)}
+                className="text-gray-500 hover:text-gray-700"
               >
-                ×
+                ✕
               </Button>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
+            <div className="space-y-6">
+              {/* Route Header */}
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-blue-100 rounded-lg">
                   {getTransportIcon(selectedRoute.type)}
                 </div>
                 <div>
-                  <div className="font-semibold">{selectedRoute.from} → {selectedRoute.to}</div>
-                  <div className="text-sm text-gray-500">{selectedRoute.operator}</div>
+                  <div className="text-lg font-bold">{selectedRoute.from} → {selectedRoute.to}</div>
+                  <div className="text-gray-600">{selectedRoute.operator}</div>
                 </div>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>Departure: <span className="font-semibold">{selectedRoute.departure}</span></div>
-                  <div>Arrival: <span className="font-semibold">{selectedRoute.arrival}</span></div>
-                  <div>Duration: <span className="font-semibold">{selectedRoute.duration}</span></div>
-                  <div>Price: <span className="font-semibold text-green-600">{selectedRoute.price}</span></div>
+              {/* Journey Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg text-center">
+                  <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <div className="font-semibold">Departure</div>
+                  <div className="text-xl font-bold text-blue-600">{selectedRoute.departure}</div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg text-center">
+                  <Clock className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <div className="font-semibold">Arrival</div>
+                  <div className="text-xl font-bold text-green-600">{selectedRoute.arrival}</div>
                 </div>
               </div>
               
-              <div>
-                <Badge className={`${getStatusColor(selectedRoute.status)} border-0`}>
-                  {selectedRoute.status}
-                </Badge>
+              {/* Additional Info */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-gray-600">Duration</span>
+                  <span className="font-semibold">{selectedRoute.duration}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-gray-600">Price</span>
+                  <span className="font-bold text-green-600 text-lg">{selectedRoute.price}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-gray-600">Next Stop</span>
+                  <span className="font-semibold">{selectedRoute.nextStop}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600">Status</span>
+                  <Badge className={`${getStatusColor(selectedRoute.status)} border-0`}>
+                    {selectedRoute.status}
+                  </Badge>
+                </div>
               </div>
               
-              <Button className="w-full">
-                Book Now
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button className="flex-1" size="lg">
+                  Book Now
+                </Button>
+                <Button variant="outline" className="flex-1" size="lg">
+                  Save Route
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
