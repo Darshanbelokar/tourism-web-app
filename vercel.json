@@ -1,9 +1,12 @@
 {
   "builds": [
     {
-      "src": "frontend/vite.config.js",
+      "src": "frontend/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "frontend/dist" }
+      "config": { 
+        "distDir": "dist",
+        "buildCommand": "npm run build"
+      }
     },
     {
       "src": "api/**/*.js",
