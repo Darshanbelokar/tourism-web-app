@@ -6,7 +6,7 @@ export const getApiBase = () => {
   }
   
   // For production - replace with your actual backend URL
-  return import.meta.env.VITE_BACKEND_URL || 'https://your-backend-url.com';
+  return import.meta.env.VITE_BACKEND_URL || 'https://tourism-web-app-04va.onrender.com';
 };
 
 // API endpoint helpers
