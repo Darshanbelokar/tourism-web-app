@@ -2,7 +2,7 @@ import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Badge } from "./UI/badge";
 import { ShoppingBag, Star, Truck, Shield, Hand } from "lucide-react";
-// import handicrafts from "@/assets/betlaNationalPark/handicrafts.jpeg";
+import DokraBronzeFigurines from "@/assets/DokraBronzeFigurines.jpg";
 import SantalBambooBaskets from "@/assets/SantalBambooBasket.jpeg";
 import TribalJewelrySet from "@/assets/TribalJwellerySett.jpeg";
 import HandmadePottery from "@/assets/HandMadePottery.jpeg";
@@ -11,13 +11,13 @@ const products = [
   {
     id: 1,
     name: "Handwoven Dokra Art",
-  image: "", // Replace with a valid image import if available
+    image: DokraBronzeFigurines,
     price: "₹2,500",
     originalPrice: "₹3,200",
     rating: 4.9,
     reviews: 127,
     seller: "Tribal Artisan Collective",
-    description: "Authentic brass figurines made using traditional lost-wax technique.",
+    description: "Authentic brass figurines made using traditional lost-wax technique depicting tribal dancers and musicians.",
     featured: true
   },
   {

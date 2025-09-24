@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Users, Music, Palette, Home, Calendar } from "lucide-react";
+import DokraBronzeFigurines from "@/assets/DokraBronzeFigurines.jpg";
 
 const experiences = [
   {
@@ -24,12 +25,14 @@ const experiences = [
   },
   {
     id: 3,
-    title: "Handicraft Making",
-    description: "Create beautiful tribal art, pottery and textiles with local artisans.",
+    title: "Dokra Art & Handicraft Making",
+    description: "Master the ancient lost-wax technique to create beautiful bronze figurines and learn traditional pottery, textiles with tribal artisans.",
     icon: Palette,
     duration: "Half day",
     price: "₹1,200/person",
-    includes: ["Materials", "Expert guidance", "Take home crafts"]
+    includes: ["Materials", "Expert guidance", "Take home crafts"],
+    image: DokraBronzeFigurines,
+    featured: true
   },
   {
     id: 4,
@@ -67,6 +70,16 @@ const CulturalExperiences = () => {
             const IconComponent = experience.icon;
             return (
             <Card key={experience.id} className="p-6 shadow-cultural hover:shadow-glow transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] bg-gradient-cultural text-secondary-foreground">
+                {experience.image && experience.featured && (
+                  <div className="mb-6 -mx-6 -mt-6">
+                    <img 
+                      src={experience.image} 
+                      alt={experience.title}
+                      className="w-full h-48 object-cover rounded-t-lg"
+                    />
+                  </div>
+                )}
+                
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary-foreground/20 rounded-full mb-4">
                     <IconComponent className="h-8 w-8" />
