@@ -131,7 +131,7 @@ function FeedbackSystem({ targetType, targetId }) {
 
     try {
       // First, analyze the feedback with AI
-      const analysisRes = await fetch('/api/feedback/analyze', {
+      const analysisRes = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

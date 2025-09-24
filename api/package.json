@@ -1,0 +1,9 @@
+{
+  "name": "tourism-web-app-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "mongoose": "^8.18.0",
+    "@google/generative-ai": "^0.24.1"
+  }
+}
