@@ -1,17 +1,22 @@
 {
-  "version": 2,
   "builds": [
-    { "src": "frontend/package.json", "use": "@vercel/static-build" },
-    { "src": "api/**/*.js", "use": "@vercel/node" }
+    {
+      "src": "frontend/vite.config.js",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "frontend/dist" }
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-
     { "src": "/assets/(.*)", "dest": "/frontend/dist/assets/$1" },
     { "src": "/favicon.ico", "dest": "/frontend/dist/favicon.ico" },
     { "src": "/robots.txt", "dest": "/frontend/dist/robots.txt" },
     { "src": "/manifest.json", "dest": "/frontend/dist/manifest.json" },
-
+    { "src": "/logo(.*)", "dest": "/frontend/dist/logo$1" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/frontend/dist/index.html" }
   ]
 }
