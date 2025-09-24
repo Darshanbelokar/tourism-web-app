@@ -1,31 +1,29 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist",
-  "functions": {
-    "api/hello.js": {
-      "runtime": "@vercel/node@3.2.8"
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
-    "api/spots.js": {
-      "runtime": "@vercel/node@3.2.8"
-    },
-    "api/feedback.js": {
-      "runtime": "@vercel/node@3.2.8"
-    },
-    "api/analyze.js": {
-      "runtime": "@vercel/node@3.2.8"
-    },
-    "api/gemini-flash.js": {
-      "runtime": "@vercel/node@3.2.8"
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
+    {
+      "handle": "filesystem"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/frontend/dist/index.html"
     }
   ]
 }
