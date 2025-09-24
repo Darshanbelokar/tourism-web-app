@@ -2,7 +2,7 @@ import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Badge } from "./UI/badge";
 import { ShoppingBag, Star, Truck, Shield, Hand } from "lucide-react";
-import DokraBronzeFigurines from "@/assets/DokraBronzeFigurines.jpg";
+import DokraBronzeFigurines from "@/assets/Dokra art.jpeg";
 import SantalBambooBaskets from "@/assets/SantalBambooBasket.jpeg";
 import TribalJewelrySet from "@/assets/TribalJwellerySett.jpeg";
 import HandmadePottery from "@/assets/HandMadePottery.jpeg";

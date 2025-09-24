@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Users, Music, Palette, Home, Calendar } from "lucide-react";
-import DokraBronzeFigurines from "@/assets/DokraBronzeFigurines.jpg";
+import DokraBronzeFigurines from "@/assets/Dokra art.jpeg";
 
 const experiences = [
   {
