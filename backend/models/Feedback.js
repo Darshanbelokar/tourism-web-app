@@ -76,7 +76,9 @@ const feedbackSchema = new mongoose.Schema(
 
 // Index for efficient queries
 feedbackSchema.index({ targetType: 1, targetId: 1 });
-feedbackSchema.index({ user: 1, targetType: 1, targetId: 1 }, { unique: true }); // One feedback per user per target
+// Remove unique constraint to allow multiple feedback per user per destination
+// feedbackSchema.index({ user: 1, targetType: 1, targetId: 1 }, { unique: true }); 
+feedbackSchema.index({ user: 1, targetType: 1, targetId: 1 }); // Non-unique index for queries
 feedbackSchema.index({ 'sentiment.score': 1 });
 feedbackSchema.index({ rating: 1 });
 feedbackSchema.index({ createdAt: -1 });

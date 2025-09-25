@@ -439,7 +439,7 @@ router.post('/feedback', async (req, res) => {
       return res.status(400).json({ error: err.message });
     }
     if (err.code === 11000) {
-      return res.status(400).json({ error: 'You have already submitted feedback for this destination' });
+      return res.status(400).json({ error: 'Duplicate entry detected' });
     }
     res.status(400).json({ error: err.message });
   }
