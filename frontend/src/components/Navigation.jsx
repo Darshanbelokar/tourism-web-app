@@ -122,9 +122,9 @@ const Navigation = () => {
   <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
         {/* Mobile Navigation */}
-        <div className={`md:hidden overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-96 opacity-100 pb-4' : 'max-h-0 opacity-0'}`}>
+        <div className={`md:hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-screen opacity-100 pb-4' : 'max-h-0 opacity-0 overflow-hidden'}`}>
           <div className="border-t border-border/50 mt-2 pt-4">
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-4 max-h-96 overflow-y-auto mobile-nav-scroll scrollbar-thin">
               <a
                 href="#destinations"
                 className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
@@ -174,6 +174,23 @@ const Navigation = () => {
               >
                 Transport
               </Link>
+
+              {/* Cart Button for Mobile */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setCartOpen(true);
+                  setIsOpen(false);
+                }}
+                className="w-fit justify-start relative hover:bg-primary/10 transition-colors duration-200"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Cart
+                {cart.length > 0 && (
+                  <span className="absolute -top-1 left-6 bg-primary text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">{cart.length}</span>
+                )}
+              </Button>
 
               {user ? (
                 <div className="flex flex-col space-y-3 pt-2 border-t border-border/30">
