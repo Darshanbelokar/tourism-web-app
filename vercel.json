@@ -13,6 +13,26 @@
       "handle": "filesystem"
     },
     {
+      "src": "/analytics",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/feedback",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/transport",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/destinations/(.*)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/marketplace",
+      "dest": "/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
