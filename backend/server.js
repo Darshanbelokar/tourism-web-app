@@ -44,22 +44,21 @@ const MONGODB_URI = process.env.MONGODB_URI ||
 // Function to run migrations
 const runMigrations = async () => {
   try {
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-    const execAsync = promisify(exec);
-    
     console.log('🔄 Running database migrations...');
-    const { stdout, stderr } = await execAsync('node migrations/removeUniqueConstraint.js');
     
-    if (stderr && !stderr.includes('dotenv')) {
-      console.error('Migration stderr:', stderr);
-    }
-    if (stdout) {
-      console.log('Migration output:', stdout);
-    }
-    console.log('✅ Migrations completed');
+    // Import and run migrations
+    const removeUniqueConstraint = (await import('./migrations/removeUniqueConstraint.js')).default;
+    const addEmailVerificationFields = (await import('./migrations/addEmailVerificationFields.js')).default;
+    
+    console.log('� Running removeUniqueConstraint migration...');
+    await removeUniqueConstraint();
+    
+    console.log('📧 Running email verification fields migration...');
+    await addEmailVerificationFields();
+    
+    console.log('✅ All migrations completed successfully');
   } catch (error) {
-    console.log('ℹ️ Migration skipped (may already be applied):', error.message);
+    console.log('ℹ️ Migration error (may already be applied):', error.message);
   }
 };
 

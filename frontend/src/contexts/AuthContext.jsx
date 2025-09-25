@@ -12,18 +12,24 @@ export const AuthProvider = ({ children }) => {
   // 🔹 Login
   const signIn = async (email, password) => {
     try {
-  const res = await fetch(`${getApiBase()}/api/auth/login`, {
+      const res = await fetch(`${getApiBase()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const errorText = await res.text();
-        return { error: { message: errorText || "Login failed" } };
+        return { 
+          error: { 
+            message: data.message || "Login failed",
+            requiresVerification: data.requiresVerification || false,
+            email: data.email
+          } 
+        };
       }
 
-      const data = await res.json();
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem("token", data.token);
@@ -37,19 +43,27 @@ export const AuthProvider = ({ children }) => {
   // 🔹 Signup
   const signUp = async (fullName, email, password) => {
     try {
-  const res = await fetch(`${getApiBase()}/api/auth/signup`, {
+      const res = await fetch(`${getApiBase()}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const errorText = await res.text();
-        return { error: { message: errorText || "Signup failed" } };
+        return { error: { message: data.message || "Signup failed" } };
       }
 
-      const data = await res.json();
-      return { message: data.message };
+      return { 
+        data: {
+          message: data.message,
+          requiresVerification: data.requiresVerification || false,
+          verificationSent: data.verificationSent || false,
+          email: data.email,
+          userId: data.userId
+        }
+      };
     } catch (err) {
       return { error: { message: err.message } };
     }
