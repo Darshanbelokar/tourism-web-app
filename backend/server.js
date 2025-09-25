@@ -41,8 +41,34 @@ app.use(express.json());
 const MONGODB_URI = process.env.MONGODB_URI || 
   "mongodb+srv://sample_user_1:darshan123@tourismapp.lxpc4az.mongodb.net/tourismApp?retryWrites=true&w=majority";
 
+// Function to run migrations
+const runMigrations = async () => {
+  try {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+    
+    console.log('🔄 Running database migrations...');
+    const { stdout, stderr } = await execAsync('node migrations/removeUniqueConstraint.js');
+    
+    if (stderr && !stderr.includes('dotenv')) {
+      console.error('Migration stderr:', stderr);
+    }
+    if (stdout) {
+      console.log('Migration output:', stdout);
+    }
+    console.log('✅ Migrations completed');
+  } catch (error) {
+    console.log('ℹ️ Migration skipped (may already be applied):', error.message);
+  }
+};
+
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log("✅ Connected to MongoDB!"))
+  .then(async () => {
+    console.log("✅ Connected to MongoDB!");
+    // Run migrations after successful connection
+    await runMigrations();
+  })
   .catch(err => console.error("❌ MongoDB connection error:", err));
 
 // --------- Routes ---------
