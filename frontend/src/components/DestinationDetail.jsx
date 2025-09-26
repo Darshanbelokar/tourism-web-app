@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import VRViewer from "./VRViewer";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
@@ -13,6 +14,7 @@ import HundruFalls from "@/assets/hundruFalls/Hundru.jpeg";
 import Hundru1 from "@/assets/hundruFalls/Hundru1.jpg";
 import Hundru2 from "@/assets/hundruFalls/Hundru2.jpeg";
 import Hundru3 from "@/assets/hundruFalls/Hundru3.jpg";
+import Hundru4 from "@/assets/hundruFalls/Hundru4.webp";
 import DeogharTemple from "@/assets/deogharTempleComplex/DeogharTemple.jpg";
 import Deoghar1 from "@/assets/deogharTempleComplex/Deoghar1.jpg";
 import Deoghar2 from "@/assets/deogharTempleComplex/Deoghar2.jpeg";
@@ -33,13 +35,13 @@ const DestinationDetail = () => {
       "1": {
         id: 1,
         name: "Betla National Park",
-        image: BetlaNationalPark,
+        image: BetlaNationalPark, // Main Betla park image
         rating: 4.8,
         duration: "2-3 days",
         description: "Home to majestic elephants and diverse wildlife in pristine sal forests. Betla National Park is one of India's finest wildlife sanctuaries, offering incredible opportunities to spot tigers, elephants, and various species of deer in their natural habitat.",
         highlights: ["Wildlife Safari", "Elephant Spotting", "Nature Trails", "Bird Watching"],
         location: "Palamau District",
-        images: [Tiger, Image2, Image3, Image4],
+        images: [Tiger, Image2, Image3, Image4], // Wildlife images from betlaWildlife.js
         details: {
           bestTime: "October to June",
           entryFee: "₹100 for Indians, ₹400 for foreigners",
@@ -50,13 +52,13 @@ const DestinationDetail = () => {
       "2": {
         id: 2,
         name: "Netarhat Hill Station",
-        image: Netarhat,
+        image: Netarhat, // Main Netarhat image
         rating: 4.7,
         duration: "1-2 days",
         description: "The 'Queen of Chotanagpur' with breathtaking sunrise and sunset views. Known for its cool climate, beautiful landscapes, and colonial architecture, Netarhat offers a perfect retreat from the summer heat.",
         highlights: ["Sunrise Point", "Magnolia Point", "Cool Climate", "Colonial Architecture"],
         location: "Latehar District",
-        images: [Netarhat1, Netarhat2, Netarhat3, Netarhat4],
+        images: [Netarhat1, Netarhat2, Netarhat3, Netarhat4], // Netarhat images from netarhatImages.js
         details: {
           bestTime: "October to May",
           entryFee: "Free",
@@ -67,13 +69,13 @@ const DestinationDetail = () => {
       "3": {
         id: 3,
         name: "Hundru Falls",
-        image: HundruFalls,
+        image: HundruFalls, // Main Hundru Falls image
         rating: 4.6,
         duration: "1 day",
         description: "Spectacular 98-meter waterfall perfect for nature photography. Located in Ranchi district, Hundru Falls is one of the highest waterfalls in Jharkhand and offers stunning views during the monsoon season.",
         highlights: ["Waterfall Trek", "Photography", "Natural Pool", "Picnic Spot"],
         location: "Ranchi",
-        images: [HundruFalls, Hundru1, Hundru2, Hundru3],
+        images: [HundruFalls, Hundru1, Hundru2, Hundru3, Hundru4], // All Hundru Falls images
         details: {
           bestTime: "June to October",
           entryFee: "₹20 for Indians",
@@ -84,13 +86,13 @@ const DestinationDetail = () => {
       "4": {
         id: 4,
         name: "Deoghar Temple Complex",
-        image: DeogharTemple,
+        image: DeogharTemple, // Main Deoghar temple image
         rating: 4.9,
         duration: "1-2 days",
         description: "Sacred Jyotirlinga temple and spiritual center of Jharkhand. The Baidyanath Temple is one of the 12 Jyotirlingas and attracts millions of devotees throughout the year.",
         highlights: ["Baidyanath Temple", "Spiritual Experience", "Cultural Heritage", "Festivals"],
         location: "Deoghar",
-        images: [Deoghar1, Deoghar2, Deoghar3, Deoghar4],
+        images: [Deoghar1, Deoghar2, Deoghar3, Deoghar4], // All Deoghar temple images
         details: {
           bestTime: "Throughout the year",
           entryFee: "Free",
@@ -105,7 +107,15 @@ const DestinationDetail = () => {
   useEffect(() => {
     const fetchDestination = async () => {
       try {
-        // First try to fetch from API
+        // Always prioritize static data first for correct images
+        const staticData = getStaticDestinationData(id);
+        if (staticData) {
+          setDestination(staticData);
+          setLoading(false);
+          return;
+        }
+
+        // Only try API if no static data found
         try {
           const response = await fetch(`${getApiBase()}/api/spots`);
           if (response.ok) {
@@ -137,16 +147,10 @@ const DestinationDetail = () => {
             }
           }
         } catch (apiError) {
-          console.log('API fetch failed, trying static data');
+          console.log('API fetch failed');
         }
 
-        // Fallback to static data
-        const staticData = getStaticDestinationData(id);
-        if (staticData) {
-          setDestination(staticData);
-        } else {
-          throw new Error('Destination not found');
-        }
+        throw new Error('Destination not found');
       } catch (err) {
         setError(err.message);
       } finally {
