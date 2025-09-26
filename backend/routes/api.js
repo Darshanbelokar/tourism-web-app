@@ -375,7 +375,7 @@ Respond ONLY with valid JSON, no additional text.`;
     if (process.env.GOOGLE_API_KEY) {
       try {
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
         const result = await model.generateContent(fullPrompt);
         aiResponse = result?.response?.text() || '';
       } catch (gErr) {
