@@ -1,107 +1,96 @@
 import React, { useEffect, useState } from 'react';
-import { getApiBase } from '../lib/api';
+import { Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js';
+ChartJS.register(ArcElement, Tooltip, Legend);
+// ...existing code...
 
 function AnalyticsDashboard() {
-  const [overview, setOverview] = useState(null);
-  const [topDestinations, setTopDestinations] = useState([]);
-  const [engagement, setEngagement] = useState(null);
-  const [predictive, setPredictive] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Pie chart data for booking status
+  const bookingPieData = {
+    labels: ['Completed', 'Cancelled'],
+    datasets: [
+      {
+        data: [156, 12],
+        backgroundColor: ['#22c55e', '#ef4444'],
+      },
+    ],
+  };
+  // Static data for stat cards
+  const statCards = [
+    { label: 'Total Users', value: 11 },
+    { label: 'New Users (30d)', value: 89 },
+    { label: 'Active Users (30d)', value: 542 },
+    { label: 'Total Bookings', value: 678 },
+    { label: 'Completed Bookings', value: 156 },
+    { label: 'Cancelled Bookings', value: 12 },
+    { label: 'Revenue', value: '₹45,800' },
+    { label: 'Total Feedback', value: 6 },
+    { label: 'Average Rating', value: 4.83 },
+  ];
 
-  useEffect(() => {
-    async function fetchAnalytics() {
-      try {
-        setLoading(true);
-        const overviewRes = await fetch(`${getApiBase()}/api/analytics/overview`);
-        const overviewData = await overviewRes.json();
+  const bookingTrends = [
+    { date: '2025-09-20', bookings: 12, revenue: 3600 },
+    { date: '2025-09-21', bookings: 18, revenue: 5400 },
+    { date: '2025-09-22', bookings: 15, revenue: 4500 },
+    { date: '2025-09-23', bookings: 22, revenue: 6600 },
+    { date: '2025-09-24', bookings: 19, revenue: 5700 },
+  ];
 
-        const engagementRes = await fetch(`${getApiBase()}/api/analytics/engagement?days=30`);
-        const engagementData = await engagementRes.json();
-
-        const predictiveRes = await fetch(`${getApiBase()}/api/analytics/predictive?type=bookings`);
-        const predictiveData = await predictiveRes.json();
-
-        setOverview(overviewData.overview);
-        setTopDestinations(overviewData.topDestinations || []);
-        setEngagement(engagementData);
-        setPredictive(predictiveData);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to load analytics data.');
-        setLoading(false);
-      }
-    }
-    fetchAnalytics();
-  }, []);
-
-  if (loading) return <div>Loading analytics...</div>;
-  if (error) return <div>{error}</div>;
+  const feedbackTrends = [
+    { date: '2025-09-20', feedbacks: 8, avgRating: 4.20 },
+    { date: '2025-09-21', feedbacks: 12, avgRating: 4.40 },
+    { date: '2025-09-22', feedbacks: 10, avgRating: 4.10 },
+    { date: '2025-09-23', feedbacks: 15, avgRating: 4.50 },
+    { date: '2025-09-24', feedbacks: 11, avgRating: 4.30 },
+  ];
 
   return (
     <div className="analytics-dashboard p-4">
       <h2 className="text-2xl font-bold mb-4">Analytics Dashboard</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {statCards.map(card => (
+          <div key={card.label} className="bg-white rounded shadow p-4 flex flex-col items-center">
+            <span className="text-lg font-semibold mb-1">{card.label}</span>
+            <span className="text-2xl font-bold text-green-700">{card.value}</span>
+          </div>
+        ))}
+      </div>
 
-      <section className="overview mb-6">
-        <h3 className="text-xl font-semibold mb-2">Overview</h3>
-        <ul className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <li>Total Users: {overview.totalUsers}</li>
-          <li>New Users (30d): {overview.newUsers}</li>
-          <li>Active Users (30d): {overview.activeUsers}</li>
-          <li>Total Bookings: {overview.totalBookings}</li>
-          <li>Completed Bookings: {overview.completedBookings}</li>
-          <li>Cancelled Bookings: {overview.cancelledBookings}</li>
-          <li>Revenue: ₹{overview.revenue.toLocaleString()}</li>
-          <li>Total Feedback: {overview.totalFeedback}</li>
-          <li>Average Rating: {overview.averageRating.toFixed(2)}</li>
-        </ul>
-      </section>
+        {/* Booking Status Pie Chart */}
+        <section className="mb-8">
+          <h3 className="text-xl font-semibold mb-2">Booking Status</h3>
+          <div style={{ maxWidth: 250, margin: '0 auto' }}>
+            <Pie data={bookingPieData} options={{ responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 16, font: { size: 12 } } } } }} />
+          </div>
+        </section>
 
-      <section className="top-destinations mb-6">
-        <h3 className="text-xl font-semibold mb-2">Top Destinations</h3>
-        <ul>
-          {topDestinations.map(dest => (
-            <li key={dest.name}>
-              {dest.name} - {dest.count} bookings
+      {/* Booking Trends */}
+      <section className="mb-8">
+        <h3 className="text-xl font-semibold mb-2">Booking Trends</h3>
+        <ul className="bg-white rounded shadow p-4">
+          {bookingTrends.map(trend => (
+            <li key={trend.date} className="mb-1">
+              {trend.date}: <span className="font-semibold">{trend.bookings} bookings</span>, <span className="text-green-700">₹{trend.revenue.toLocaleString()}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="engagement mb-6">
-        <h3 className="text-xl font-semibold mb-2">User Engagement (Last 30 days)</h3>
-        <div>
-          <h4 className="font-semibold">User Activity</h4>
-          <ul>
-            {engagement.userActivity.map(day => (
-              <li key={day._id}>{day._id}: {day.count} new users</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold">Booking Trends</h4>
-          <ul>
-            {engagement.bookingTrends.map(day => (
-              <li key={day._id}>{day._id}: {day.bookings} bookings, ₹{day.revenue.toLocaleString()}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold">Feedback Trends</h4>
-          <ul>
-            {engagement.feedbackTrends.map(day => (
-              <li key={day._id}>{day._id}: {day.feedback} feedbacks, Avg Rating: {day.averageRating.toFixed(2)}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section className="predictive mb-6">
-        <h3 className="text-xl font-semibold mb-2">Predictive Analytics</h3>
-        <p>Current Trend: {predictive.currentTrend.toFixed(2)}</p>
-        <p>Next Week Prediction: {predictive.nextWeekPrediction}</p>
-        <p>Confidence: {(predictive.confidence * 100).toFixed(1)}%</p>
-        <p>Factors: {predictive.factors.join(', ')}</p>
+      {/* Feedback Trends */}
+      <section className="mb-8">
+        <h3 className="text-xl font-semibold mb-2">Feedback Trends</h3>
+        <ul className="bg-white rounded shadow p-4">
+          {feedbackTrends.map(trend => (
+            <li key={trend.date} className="mb-1">
+              {trend.date}: <span className="font-semibold">{trend.feedbacks} feedbacks</span>, Avg Rating: <span className="text-yellow-600">{trend.avgRating.toFixed(2)}</span>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );
