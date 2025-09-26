@@ -139,42 +139,93 @@ router.post('/gemini-flash', async (req, res) => {
 
 router.post('/ai-chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, language } = req.body;
     console.log('--- AI Chat Request ---');
-    console.log('API Key loaded:', !!process.env.GOOGLE_API_KEY);
+    console.log('API Key available:', !!process.env.GOOGLE_API_KEY);
     console.log('Request body:', req.body);
+    
     if (!message) {
       console.log('No message provided');
       return res.status(400).json({ error: 'Message is required' });
     }
 
+    // If Google API key is not available, provide a helpful fallback response
     if (!process.env.GOOGLE_API_KEY) {
-      console.log('GOOGLE_API_KEY missing');
-      return res.status(503).json({ error: 'AI service not configured (missing GOOGLE_API_KEY)' });
+      console.log('GOOGLE_API_KEY missing - providing fallback response');
+      
+      // Provide tourism-related fallback responses
+      let fallbackResponse = '';
+      const messageLower = message.toLowerCase();
+      
+      if (messageLower.includes('accommodation') || messageLower.includes('hotel') || messageLower.includes('stay')) {
+        fallbackResponse = '🏨 For accommodations in Jharkhand, I recommend checking out eco-friendly resorts near Betla National Park, heritage hotels in Ranchi, and forest lodges near Netarhat. Many offer great views of the natural landscape and local cultural experiences.';
+      } else if (messageLower.includes('food') || messageLower.includes('cuisine') || messageLower.includes('eat')) {
+        fallbackResponse = '🍽️ Jharkhand offers delicious tribal cuisine including Handia (rice beer), Rugra (mushroom curry), and various rice-based dishes. Don\'t miss trying the local sweets and traditional preparations made with forest ingredients.';
+      } else if (messageLower.includes('places') || messageLower.includes('visit') || messageLower.includes('destination')) {
+        fallbackResponse = '🏞️ Top destinations in Jharkhand include Betla National Park for wildlife, Hundru Falls for natural beauty, Deoghar Temple Complex for spirituality, and Netarhat for hill station vibes. Each offers unique experiences of Jharkhand\'s rich culture and nature.';
+      } else if (messageLower.includes('culture') || messageLower.includes('tradition') || messageLower.includes('festival')) {
+        fallbackResponse = '🎭 Jharkhand has rich tribal culture with festivals like Sarhul, Karma, and Sohrai. Experience traditional dance, music, and art forms. Visit local markets for authentic Dokra art and handicrafts made by tribal artisans.';
+      } else if (messageLower.includes('transport') || messageLower.includes('travel') || messageLower.includes('reach')) {
+        fallbackResponse = '🚗 Jharkhand is well-connected by rail and road. Ranchi is the main hub with an airport. Local transportation includes buses, taxis, and shared vehicles. For tourist spots, private vehicles or guided tours are recommended.';
+      } else {
+        fallbackResponse = `🌿 Welcome to Jharkhand Tourism! I'd be happy to help you discover this beautiful state known for its forests, waterfalls, tribal culture, and wildlife. You asked about "${message}" - Jharkhand offers amazing experiences in nature, adventure, culture, and spirituality. Feel free to ask about specific destinations, accommodations, food, or activities!`;
+      }
+      
+      return res.json({ 
+        response: fallbackResponse,
+        isAIGenerated: false,
+        note: 'This is a pre-configured response. AI service is temporarily unavailable.'
+      });
     }
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-      // Use a supported model id for v1beta API
-      const model = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-      // Use selected language from frontend, default to English
-      const replyLanguage = req.body.language || 'English';
-      const prompt = `You are a helpful AI travel assistant for Jharkhand tourism. Reply in ${replyLanguage} unless the user requests otherwise. ${message}`;
-      console.log('Prompt sent to Gemini:', prompt);
+      const replyLanguage = language || 'English';
+      const prompt = `You are a helpful AI travel assistant for Jharkhand tourism in India. 
+      
+Context: Jharkhand is a state known for its tribal culture, forests, waterfalls, wildlife sanctuaries, and mineral resources. Major attractions include Betla National Park, Hundru Falls, Deoghar temples, Netarhat hill station, and rich tribal art like Dokra crafts.
 
+Reply in ${replyLanguage} unless the user requests otherwise. Be helpful, informative, and focus on tourism aspects of Jharkhand.
+
+User question: ${message}`;
+
+      console.log('Sending prompt to Gemini API...');
       const result = await model.generateContent(prompt);
-      const aiResponse = result?.response?.text() || 'Sorry, I could not generate a response.';
-      console.log('AI response:', aiResponse);
+      const aiResponse = result?.response?.text() || 'Sorry, I could not generate a response at this time.';
+      
+      console.log('AI response received successfully');
+      res.json({ 
+        response: aiResponse,
+        isAIGenerated: true
+      });
 
-      res.json({ response: aiResponse });
-    } catch (innerError) {
-      console.error('Google Generative AI error:', innerError);
-      res.status(500).json({ error: 'Google Generative AI error', details: innerError.message });
+    } catch (aiError) {
+      console.error('Google Generative AI error:', aiError);
+      console.error('AI Error details:', aiError.message);
+      
+      // Provide fallback response even when AI fails
+      return res.json({
+        response: `🤖 I'm having trouble connecting to my AI service right now, but I'm still here to help with your Jharkhand tourism question about "${message}". 
+
+Jharkhand offers incredible experiences - from the wildlife at Betla National Park to the spiritual journey at Deoghar temples, and the scenic beauty of Hundru Falls to the cultural richness of tribal villages. 
+
+Please try asking again in a moment, or feel free to explore our destinations and marketplace sections for detailed information!`,
+        isAIGenerated: false,
+        note: 'AI service temporarily unavailable - providing fallback response'
+      });
     }
+
   } catch (error) {
-    console.error('AI chat error:', error);
-    res.status(500).json({ error: 'Failed to generate AI chat response', details: error.message });
+    console.error('AI chat endpoint error:', error);
+    console.error('Full error details:', error.stack);
+    
+    res.status(500).json({ 
+      error: 'Failed to process chat request',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Service temporarily unavailable',
+      fallbackMessage: 'Please try again later or explore our tourism destinations directly!'
+    });
   }
 });
 
