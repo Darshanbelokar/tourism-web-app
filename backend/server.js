@@ -1,16 +1,7 @@
 import dotenv from "dotenv";
-dotenv.config// Function to run migrations - simplified for deployment
-const runMigrations = async () => {
-  try {
-    console.log('Running database migrations...');
-    
-    // Skip migrations during initial deployment to prevent startup failures
-    console.log('Migrations skipped for stable deployment');
-    
-  } catch (error) {
-    console.log('Migration error (may already be applied):', error.message);
-  }
-};s from "express";
+dotenv.config();
+
+import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
@@ -26,12 +17,12 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     // Allow all localhost ports during development
-    if (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1") || origin.startsWith("http://192.168")) {
+    if (origin && (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1") || origin.startsWith("http://192.168"))) {
       return callback(null, true);
     }
 
     // Allow Vercel deployments
-    if (origin.includes("vercel.app") || origin.includes("tourism-web")) {
+    if (origin && (origin.includes("vercel.app") || origin.includes("tourism-web"))) {
       return callback(null, true);
     }
 
@@ -50,51 +41,54 @@ app.use(express.json());
 const MONGODB_URI = process.env.MONGODB_URI || 
   "mongodb+srv://sample_user_1:darshan123@tourismapp.lxpc4az.mongodb.net/tourismApp?retryWrites=true&w=majority";
 
-// Function to run migrations
-const runMigrations = async () => {
-  try {
-    console.log('🔄 Running database migrations...');
-    
-    // Import and run migrations
-    const removeUniqueConstraint = (await import('./migrations/removeUniqueConstraint.js')).default;
-    const addEmailVerificationFields = (await import('./migrations/addEmailVerificationFields.js')).default;
-    
-    console.log('� Running removeUniqueConstraint migration...');
-    await removeUniqueConstraint();
-    
-    console.log('📧 Running email verification fields migration...');
-    await addEmailVerificationFields();
-    
-    console.log('✅ All migrations completed successfully');
-  } catch (error) {
-    console.log('ℹ️ Migration error (may already be applied):', error.message);
-  }
-};
-
+// Simplified connection without migrations for stable deployment
 mongoose.connect(MONGODB_URI)
-  .then(async () => {
+  .then(() => {
     console.log("Connected to MongoDB successfully!");
-    // Run migrations after successful connection
-    await runMigrations();
   })
-  .catch(err => console.error("MongoDB connection error:", err));
+  .catch(err => {
+    console.error("MongoDB connection error:", err);
+  });
 
 // --------- Routes ---------
-app.get("/", (req, res) => res.send("API is running..."));
-app.get("/health", (req, res) => res.json({ status: "OK", timestamp: new Date() }));
-app.get("/test", (req, res) => res.json({ message: "Test endpoint working", timestamp: new Date() }));
-
-// Debug middleware to log all requests
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-  next();
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "Jharkhand Tourism API is running!", 
+    status: "OK",
+    timestamp: new Date().toISOString()
+  });
 });
 
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/test", (req, res) => {
+  res.json({ 
+    message: "Test endpoint working", 
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", apiRoutes);
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('Server error:', error);
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+  });
+});
 
 // --------- Start Server ---------
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Health check available at /health`);
 });
