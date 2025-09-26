@@ -107,7 +107,29 @@ router.post('/gemini-flash', async (req, res) => {
       return res.status(503).json({ error: 'GOOGLE_API_KEY not configured' });
     }
 
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
+    // Try Gemini 2.5 Flash first, fallback to 1.5 Flash if needed
+  let url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
+  let response, data;
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    data = await response.json();
+    if (!response.ok && response.status === 404) {
+      // Fallback to Gemini 1.5 Flash
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      data = await response.json();
+    }
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error || 'Gemini API error' });
+    }
+    res.json(data);
     const body = {
       contents: [
         {
@@ -117,18 +139,7 @@ router.post('/gemini-flash', async (req, res) => {
         }
       ]
     };
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error || 'Gemini API error' });
-    }
-    res.json(data);
+  // The fetch and response handling is now above, using let response, data
   } catch (error) {
     console.error('Gemini Flash API error:', error);
     res.status(500).json({ error: 'Failed to call Gemini Flash API' });
@@ -179,8 +190,14 @@ router.post('/ai-chat', async (req, res) => {
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-      // Use the correct model name for Google Generative AI
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      // Try Gemini 2.5 Flash first, fallback to 1.5 Flash if needed
+      let model;
+      try {
+        model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        await model.generateContent('test'); // quick test to check model availability
+      } catch (err) {
+        model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      }
 
       const replyLanguage = language || 'English';
       const prompt = `You are a helpful AI travel assistant for Jharkhand tourism in India. 
