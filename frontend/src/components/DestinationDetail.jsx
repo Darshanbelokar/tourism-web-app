@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import VRViewer from "./VRViewer";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
