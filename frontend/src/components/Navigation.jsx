@@ -58,6 +58,9 @@ const Navigation = () => {
             <Link to="/transport" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
               Transport
             </Link>
+            <Link to="/arvr" className="text-foreground hover:text-primary transition-colors duration-200 font-medium">
+              AR/VR
+            </Link>
 
             {/* Cart Icon */}
             <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
@@ -173,6 +176,13 @@ const Navigation = () => {
                 onClick={() => setIsOpen(false)}
               >
                 Transport
+              </Link>
+              <Link
+                to="/arvr"
+                className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                AR/VR
               </Link>
 
               {/* Cart Button for Mobile */}

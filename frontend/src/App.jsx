@@ -12,6 +12,7 @@ import FeedbackSystem from "./components/FeedbackSystem";
 import Marketplace from "./components/Marketplace";
 import TransportTracker from "./components/TransportTracker";
 import DestinationDetail from "./components/DestinationDetail";
+import ARVR from "./pages/ARVR";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/feedback" element={<FeedbackSystem targetType="spot" targetId={null} />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/transport" element={<TransportTracker />} />
+              <Route path="/arvr" element={<ARVR />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -33,6 +33,10 @@
       "dest": "/index.html"
     },
     {
+      "src": "/arvr",
+      "dest": "/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
