@@ -108,7 +108,7 @@ router.post('/gemini-flash', async (req, res) => {
     }
 
     // Try Gemini 2.5 Flash first, fallback to 1.5 Flash if needed
-  let url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
+  let url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-001:generateContent?key=' + process.env.GOOGLE_API_KEY;
   let response, data;
     response = await fetch(url, {
       method: 'POST',
@@ -118,7 +118,7 @@ router.post('/gemini-flash', async (req, res) => {
     data = await response.json();
     if (!response.ok && response.status === 404) {
       // Fallback to Gemini 1.5 Flash
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
+  url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=' + process.env.GOOGLE_API_KEY;
       response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -193,10 +193,10 @@ router.post('/ai-chat', async (req, res) => {
       // Try Gemini 2.5 Flash first, fallback to 1.5 Flash if needed
       let model;
       try {
-        model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-001' });
         await model.generateContent('test'); // quick test to check model availability
       } catch (err) {
-        model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
       }
 
       const replyLanguage = language || 'English';
