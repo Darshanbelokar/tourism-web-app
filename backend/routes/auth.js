@@ -282,15 +282,7 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Check email verification status
-    if (!user.isEmailVerified) {
-      console.log('❌ Email not verified:', email);
-      return res.status(403).json({ 
-        message: "Please verify your email address before logging in. Check your inbox for verification instructions.",
-        requiresVerification: true,
-        email: user.email
-      });
-    }
+    // Email verification check removed. Allow login regardless of verification status.
 
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
