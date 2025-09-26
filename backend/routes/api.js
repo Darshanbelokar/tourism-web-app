@@ -190,14 +190,8 @@ router.post('/ai-chat', async (req, res) => {
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-      // Try Gemini 2.5 Flash first, fallback to 1.5 Flash if needed
-      let model;
-      try {
-        model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-001' });
-        await model.generateContent('test'); // quick test to check model availability
-      } catch (err) {
-        model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
-      }
+      // Use Gemini 2.5 Flash only (matches working itinerary logic)
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const replyLanguage = language || 'English';
       const prompt = `You are a helpful AI travel assistant for Jharkhand tourism in India. 
@@ -375,8 +369,14 @@ Respond ONLY with valid JSON, no additional text.`;
     if (process.env.GOOGLE_API_KEY) {
       try {
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
-        const result = await model.generateContent(fullPrompt);
+        let model, result;
+        try {
+          model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          result = await model.generateContent(fullPrompt);
+        } catch (err) {
+          model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          result = await model.generateContent(fullPrompt);
+        }
         aiResponse = result?.response?.text() || '';
       } catch (gErr) {
         console.error('Google Generative itinerary error:', gErr);
@@ -528,63 +528,15 @@ router.get('/feedback/:id', async (req, res) => {
   }
 });
 
-// PATCH update feedback (e.g., mark as helpful)
-router.patch('/feedback/:id/helpful', async (req, res) => {
-  try {
-    const { userId } = req.body;
-    const feedback = await Feedback.findById(req.params.id);
-
-    if (!feedback) {
-      return res.status(404).json({ error: 'Feedback not found' });
-    }
-
-    if (!feedback.helpful.users.includes(userId)) {
-      feedback.helpful.users.push(userId);
-      feedback.helpful.count = feedback.helpful.users.length;
-      await feedback.save();
-    }
-
-    res.json(feedback);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
 router.post('/analyze', async (req, res) => {
   try {
     const { comment, title } = req.body;
     const textToAnalyze = `${title || ''} ${comment}`.trim();
-
-    if (!textToAnalyze) {
-      return res.status(400).json({ error: 'Text is required for analysis' });
-    }
-
-    // Use Google Gemini for sentiment analysis and categorization
-    let genAI;
     if (process.env.GOOGLE_API_KEY) {
       try {
         genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        const analysisPrompt = `Analyze the following customer feedback text and provide:
-1. Sentiment score (-1 to 1, where -1 is very negative, 0 is neutral, 1 is very positive)
-2. Sentiment label (positive, neutral, negative)
-3. Confidence score (0-1)
-4. Categories (array of relevant categories from: cleanliness, service, value, location, food, amenities, staff, experience)
-5. Key tags (array of 3-5 important keywords or phrases)
-
-Feedback text: "${textToAnalyze}"
-
-Respond in JSON format only:
-{
-  "sentiment": {
-    "score": 0.0,
-    "label": "neutral",
-    "confidence": 0.0
-  },
-  "categories": ["category1", "category2"],
-  "tags": ["tag1", "tag2", "tag3"]
-}`;
+        const analysisPrompt = `Analyze the following feedback for sentiment, categories, and key tags.\n\nFeedback text: "${textToAnalyze}"\n\nRespond in JSON format only:\n{\n  "sentiment": {\n    "score": 0.0,\n    "label": "neutral",\n    "confidence": 0.0\n  },\n  "categories": ["category1", "category2"],\n  "tags": ["tag1", "tag2", "tag3"]\n}`;
 
         const result = await model.generateContent(analysisPrompt);
         const analysisText = result?.response?.text() || '';
