@@ -1,4 +1,3 @@
-
 import express from "express";
 const router = express.Router();
 import TouristSpot from "../models/TouristSpot_fixed.js";
@@ -108,7 +107,7 @@ router.post('/gemini-flash', async (req, res) => {
       return res.status(503).json({ error: 'GOOGLE_API_KEY not configured' });
     }
 
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + process.env.GOOGLE_API_KEY;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GOOGLE_API_KEY;
     const body = {
       contents: [
         {
@@ -181,7 +180,7 @@ router.post('/ai-chat', async (req, res) => {
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
       // Use the correct model name for Google Generative AI
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const replyLanguage = language || 'English';
       const prompt = `You are a helpful AI travel assistant for Jharkhand tourism in India. 
@@ -359,7 +358,7 @@ Respond ONLY with valid JSON, no additional text.`;
     if (process.env.GOOGLE_API_KEY) {
       try {
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(fullPrompt);
         aiResponse = result?.response?.text() || '';
       } catch (gErr) {
@@ -548,7 +547,7 @@ router.post('/analyze', async (req, res) => {
     if (process.env.GOOGLE_API_KEY) {
       try {
         genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const analysisPrompt = `Analyze the following customer feedback text and provide:
 1. Sentiment score (-1 to 1, where -1 is very negative, 0 is neutral, 1 is very positive)
@@ -621,7 +620,7 @@ router.post('/feedback/analyze', async (req, res) => {
     if (process.env.GOOGLE_API_KEY) {
       try {
         genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const analysisPrompt = `Analyze the following customer feedback text and provide:
 1. Sentiment score (-1 to 1, where -1 is very negative, 0 is neutral, 1 is very positive)
