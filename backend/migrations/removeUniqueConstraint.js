@@ -1,25 +1,13 @@
 // Migration to remove unique constraint from feedback collection
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const removeUniqueConstraint = async () => {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    console.log('🔄 Starting removeUniqueConstraint migration...');
 
     // Get the feedback collection
     const db = mongoose.connection.db;
     const collection = db.collection('feedbacks');
-
-    // List existing indexes
-    console.log('Current indexes:');
-    const indexes = await collection.indexes();
-    indexes.forEach(index => {
-      console.log(JSON.stringify(index, null, 2));
-    });
 
     // Drop the unique index if it exists
     try {
@@ -37,22 +25,13 @@ const removeUniqueConstraint = async () => {
     await collection.createIndex({ user: 1, targetType: 1, targetId: 1 });
     console.log('✅ Created non-unique index for queries');
 
-    // List indexes after change
-    console.log('\nIndexes after migration:');
-    const newIndexes = await collection.indexes();
-    newIndexes.forEach(index => {
-      console.log(JSON.stringify(index, null, 2));
-    });
-
-    console.log('🎉 Migration completed successfully!');
+    console.log('🎉 removeUniqueConstraint migration completed!');
+    return { success: true };
     
   } catch (error) {
-    console.error('❌ Migration failed:', error);
-  } finally {
-    await mongoose.connection.close();
-    console.log('Database connection closed');
+    console.error('❌ removeUniqueConstraint migration failed:', error);
+    throw error;
   }
 };
 
-// Run the migration
-removeUniqueConstraint();
+export default removeUniqueConstraint;
