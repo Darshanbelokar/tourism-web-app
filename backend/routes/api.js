@@ -30,9 +30,7 @@ router.post('/spots', async (req, res) => {
 // GET all tourist spots
 router.get('/spots', async (req, res) => {
   try {
-    console.log('Fetching tourist spots...');
     const spots = await TouristSpot.find();
-    console.log(`Found ${spots.length} spots`);
     
     // If no spots exist, create some sample data
     if (spots.length === 0) {
